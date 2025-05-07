@@ -24,8 +24,6 @@
             --font-size-small: 14px;
             --font-size-large: 18px;
             --transition-speed: 0.3s;
-            --thought-process-bg: #f0f8ff; /* 思维链背景色 */
-            --thought-process-border: #add8e6; /* 思维链边框色 */
         }
 
         * {
@@ -266,35 +264,6 @@
             margin-top: 10px;
         }
 
-        /* 思维链容器样式 */
-        .thought-process-container {
-            background-color: var(--thought-process-bg);
-            border: 1px dashed var(--thought-process-border);
-            padding: 8px 12px;
-            margin-bottom: 10px; /* 与主回复内容间距 */
-            border-radius: 8px;
-            font-size: 0.85em; /* 比主内容小一点 */
-            color: #555; /* 深灰色文字 */
-            max-height: 200px; /* 限制最大高度，超出滚动 */
-            overflow-y: auto;
-        }
-        .thought-process-container h4 {
-            margin-top: 0;
-            margin-bottom: 6px;
-            color: var(--primary-color);
-            font-size: 0.9em; /* 标题也小一点 */
-            font-weight: 600;
-        }
-        .thought-content p { margin-bottom: 0.4em; }
-        .thought-content strong, .thought-content b {
-            display: block;
-            margin-top: 0.5em;
-            margin-bottom: 0.3em;
-            color: #333;
-            font-weight: 600;
-        }
-
-
         /* 消息中的图片预览 */
         .message-images {
             display: flex;
@@ -338,6 +307,8 @@
             display: flex;
             gap: 8px; /* 按钮间距 */
             align-items: center; /* 垂直居中 */
+            /* Adjust padding/margin if needed to align with textarea baseline */
+            /* margin-bottom: 5px; /* Optional:微调以对齐 textarea 底部 */
         }
 
         .input-buttons button {
@@ -354,11 +325,14 @@
             align-items: center; /* Center icon vertically */
             transition: background-color var(--transition-speed) ease, transform 0.1s ease;
             flex-shrink: 0; /* Prevent buttons from shrinking */
+             /* Remove any vertical-align if using flexbox on parent */
         }
+         /* Ensure SVG inside buttons is sized and colored correctly */
          .input-buttons button svg {
              width: 22px; /* Adjust SVG size */
              height: 22px; /* Adjust SVG size */
              fill: currentColor; /* Use button's text color */
+             /* vertical-align: middle; /* Less needed with flexbox, but can be a fallback */
          }
 
 
@@ -585,14 +559,9 @@
                 <label for="enable-streaming" style="display: inline;">启用流式回复</label>
             </div>
              <div class="settings-group">
-                <input type="checkbox" id="enable-vision" checked> <!-- 默认开启 -->
+                <input type="checkbox" id="enable-vision" checked>
                 <label for="enable-vision" style="display: inline;">启用图像理解 (需要模型支持)</label>
             </div>
-             <div class="settings-group">
-                <input type="checkbox" id="show-chain-of-thought"> <!-- 默认关闭 -->
-                <label for="show-chain-of-thought" style="display: inline;">显示模型思考过程</label>
-            </div>
-
 
             <!-- Voice Input Settings -->
             <hr class="settings-separator">
@@ -709,7 +678,6 @@
         const temperatureInput = document.getElementById('temperature');
         const enableStreamingCheckbox = document.getElementById('enable-streaming');
         const enableVisionCheckbox = document.getElementById('enable-vision');
-        const showChainOfThoughtCheckbox = document.getElementById('show-chain-of-thought'); // New
         // Settings Inputs (Voice/STT)
         const sttApiKeyInput = document.getElementById('stt-api-key');
         const sttApiUrlInput = document.getElementById('stt-api-url');
@@ -795,11 +763,9 @@
                 contextLength: parseInt(contextLengthInput.value) || 500,
                 useMaxTokens: enableMaxTokensCheckbox.checked,
                 maxTokens: parseInt(maxTokensInput.value) || 60000,
-                useTemperature: enableTemperatureCheckbox.checked, // Store boolean
-                temperatureValue: parseFloat(temperatureInput.value) || 1.0, // Store value separately
+                useTemperature: parseFloat(temperatureInput.value) || 1.0,
                 useStreaming: enableStreamingCheckbox.checked,
-                useVision: enableVisionCheckbox.checked, // Default true from HTML
-                showChainOfThought: showChainOfThoughtCheckbox.checked, // New setting
+                useVision: enableVisionCheckbox.checked,
                 // STT/Voice
                 sttApiKey: sttApiKey,
                 sttApiUrl: sttApiUrl,
@@ -813,13 +779,11 @@
                  displayError("请在设置中输入有效的聊天 API Key。", true); // Show persistent error
                  settingsValid = false;
             }
-             if (!currentSettings.sttApiKey) {
+            if (!currentSettings.sttApiKey) {
                 // Only warn if key is missing, voice button will handle it later
                 displayError("提示：未输入语音 API Key，语音输入功能将不可用。", false);
-            }
-
-            if (settingsValid && currentSettings.apiKey && currentSettings.sttApiKey) { // Clear if both essential keys are present
-                 clearError();
+            } else {
+                clearError(); // Clear previous errors if keys are now provided
             }
 
 
@@ -857,30 +821,25 @@
 
          // Markdown 转义和渲染
         function renderMarkdown(markdownText) {
-            if (typeof markdownText !== 'string' || !markdownText) return '';
+            if (!markdownText) return '';
             try {
-                // Pre-process for better list rendering if needed, or handle specific markdown nuances
-                const dirtyHtml = marked.parse(markdownText, { gfm: true, breaks: true }); // Enable GFM and line breaks
-                const cleanHtml = DOMPurify.sanitize(dirtyHtml, {
-                    USE_PROFILES: { html: true },
-                    // Allow specific tags/attributes if needed, e.g., for tables if your AI might generate them
-                    // ADD_TAGS: ['table', 'thead', 'tbody', 'tr', 'th', 'td'],
-                    // ADD_ATTR: ['align'] // For table cell alignment
-                });
+                const dirtyHtml = marked.parse(markdownText);
+                // Be slightly more permissive for potential medical terms/formatting? Review carefully.
+                const cleanHtml = DOMPurify.sanitize(dirtyHtml, { USE_PROFILES: { html: true } });
                 return cleanHtml;
             } catch (e) {
-                console.error("Markdown rendering error:", e, "Input:", markdownText);
-                // Fallback to simple text escaping if Marked.js fails
-                return markdownText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;").replace(/\n/g, "<br>");
+                console.error("Markdown rendering error:", e);
+                return markdownText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             }
         }
 
 
-        // 显示消息到聊天框
+        // 显示消息到聊天框 (including status messages)
         function displayMessage(role, textContent = '', imageBase64Array = [], isStreaming = false) {
             const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', role);
+            messageDiv.classList.add('message', role); // role can be 'user', 'ai', 'error', 'status'
 
+            // Add sender label only for user/ai
             if (role === 'user' || role === 'ai') {
                 const senderLabel = document.createElement('div');
                 senderLabel.classList.add('sender-label');
@@ -891,23 +850,7 @@
             const bubbleDiv = document.createElement('div');
             bubbleDiv.classList.add('message-bubble');
 
-            let messageContentDiv, thoughtContentDiv, thoughtContainerDiv;
-
-            if (role === 'ai') {
-                thoughtContainerDiv = document.createElement('div');
-                thoughtContainerDiv.classList.add('thought-process-container');
-                thoughtContainerDiv.style.display = 'none'; // Initially hidden
-
-                const thoughtHeader = document.createElement('h4');
-                thoughtHeader.textContent = '模型思考过程';
-                thoughtContainerDiv.appendChild(thoughtHeader);
-
-                thoughtContentDiv = document.createElement('div');
-                thoughtContentDiv.classList.add('thought-content');
-                thoughtContainerDiv.appendChild(thoughtContentDiv);
-                bubbleDiv.appendChild(thoughtContainerDiv);
-            }
-
+            // Handle images (only for user messages display)
             if (role === 'user' && imageBase64Array && imageBase64Array.length > 0) {
                 const imagesContainer = document.createElement('div');
                 imagesContainer.classList.add('message-images');
@@ -920,44 +863,36 @@
                 bubbleDiv.appendChild(imagesContainer);
             }
 
-            messageContentDiv = document.createElement('div');
-            messageContentDiv.classList.add('message-content');
-
+            // Handle text content
+            const contentDiv = document.createElement('div');
+            contentDiv.classList.add('message-content');
             if (isStreaming && role === 'ai') {
-                messageContentDiv.innerHTML = ''; // Wait for stream for main response
-                if (thoughtContentDiv) thoughtContentDiv.innerHTML = ''; // And for thoughts
+                contentDiv.innerHTML = ''; // Wait for stream
             } else if (role === 'ai' || role === 'user') {
-                messageContentDiv.innerHTML = renderMarkdown(textContent);
+                contentDiv.innerHTML = renderMarkdown(textContent);
             } else {
-                messageContentDiv.textContent = textContent;
+                // For 'error' or 'status', display plain text, maybe with specific styling via role class
+                contentDiv.textContent = textContent;
             }
-            bubbleDiv.appendChild(messageContentDiv);
+             bubbleDiv.appendChild(contentDiv);
+
             messageDiv.appendChild(bubbleDiv);
             chatbox.appendChild(messageDiv);
             scrollToBottom();
-
-            if (role === 'ai') {
-                return {
-                    messageNode: messageContentDiv,
-                    thoughtNode: thoughtContentDiv,
-                    thoughtContainerNode: thoughtContainerDiv
-                };
-            }
-            return { messageNode: messageContentDiv };
+            return contentDiv; // Return content div for streaming updates
         }
 
-
-        // --- Image Handling ---
+        // --- Image Handling (Mostly Unchanged) ---
         function handleImageUpload(event) {
             const files = event.target.files;
             if (!files || files.length === 0) return;
 
-            imagePreviewArea.style.display = 'flex';
+            imagePreviewArea.style.display = 'flex'; // Show preview area
 
             Array.from(files).forEach(file => {
                 if (!file.type.startsWith('image/')) {
                     console.warn(`文件 ${file.name} 不是图片，已跳过。`);
-                    return;
+                    return; // Only process images
                 }
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -965,6 +900,7 @@
                     const fileData = { name: file.name, base64: base64String };
                     uploadedFiles.push(fileData);
 
+                    // Create preview
                     const previewItem = document.createElement('div');
                     previewItem.classList.add('image-preview-item');
                     const img = document.createElement('img');
@@ -991,55 +927,58 @@
                 }
                 reader.readAsDataURL(file);
             });
-            imageInput.value = null;
+            imageInput.value = null; // Clear input value
         }
 
         // 清空对话
         function clearChat() {
             conversationHistory = [];
-            chatbox.innerHTML = '';
+            chatbox.innerHTML = ''; // Clear UI
+             // Add back initial welcome message
             displayMessage('ai', '您好！我是您的AI健康助手。请问您今天感觉哪里不舒服？可以详细描述一下您的症状，如果方便的话，也可以提供相关的图片或使用语音输入。');
             uploadedFiles = [];
             imagePreviewArea.innerHTML = '';
             imagePreviewArea.style.display = 'none';
-            clearError();
-            updateVoiceStatus("", "idle");
+            clearError(); // Clear persistent errors
+            updateVoiceStatus("", "idle"); // Clear voice status
 
-            if (aiResponseController) {
+            if (aiResponseController) { // Abort ongoing chat request
                 aiResponseController.abort();
                 aiResponseController = null;
             }
-            if (isRecordingVoice) {
-                stopVoiceRecording(true);
+            if (isRecordingVoice) { // Stop ongoing recording if any
+                stopVoiceRecording(true); // Force stop
             }
-            setSendingState(false);
-            resetVoiceInputState();
+            setSendingState(false); // Reset sending state for chat
+            resetVoiceInputState(); // Reset voice button state
             console.log("对话已清空");
         }
 
-        // 设置发送状态
+        // 设置发送状态 (禁用/启用输入和按钮 for Chat)
         function setSendingState(sending) {
             isSending = sending;
-            userInput.disabled = sending || isRecordingVoice;
+            userInput.disabled = sending || isRecordingVoice; // Also disable if recording voice
             sendButton.disabled = sending || isRecordingVoice;
             uploadButton.disabled = sending || isRecordingVoice;
-            clearButton.disabled = sending;
-            voiceInputButton.disabled = sending || !micPermissionGranted || !currentSettings.sttApiKey;
+            clearButton.disabled = sending; // Allow clear unless sending chat message
+            voiceInputButton.disabled = sending || !micPermissionGranted || !currentSettings.sttApiKey; // Disable voice if sending text
 
-            const sendIcon = sendButton.querySelector('.icon');
+            // Update Send button icon/text
+             const sendIcon = sendButton.querySelector('.icon');
             if (sending) {
-                sendButton.innerHTML = '...';
+                sendButton.innerHTML = '...'; // Simple indicator
             } else {
+                // Restore icon
                 sendButton.innerHTML = `<svg class="icon" aria-hidden="true"><use xlink:href="#icon-send"></use></svg>`;
             }
         }
 
-        // --- Core Chat Sending Logic ---
+        // --- Core Chat Sending Logic (Mostly Unchanged) ---
         async function sendMessage() {
             const userText = userInput.value.trim();
 
             if (!userText && uploadedFiles.length === 0) return;
-            if (isSending || isRecordingVoice) return;
+            if (isSending || isRecordingVoice) return; // Prevent sending if already sending or recording
 
             setSendingState(true);
             clearError();
@@ -1063,29 +1002,25 @@
             } else {
                 userMessageContent = userText;
                  if (imagesToSend.length > 0 && !currentSettings.useVision) {
-                     displayMessage('status', "提示：图像理解未启用或模型不支持，图片可能不会被处理。");
+                     displayError("图像理解未启用，图片不会发送给 AI。请在设置中启用。", false); // Temporary status
                  }
             }
 
             const userMessage = { role: 'user', content: userMessageContent };
             const displayImages = imagesToSend.map(f => f.base64);
-            conversationHistory.push({ ...userMessage, displayImages: displayImages }); // Store raw content for API
-            displayMessage('user', userText, displayImages); // Display user message
+            conversationHistory.push({ ...userMessage, displayImages: displayImages });
+            displayMessage('user', userText, displayImages);
 
             userInput.value = '';
             uploadedFiles = [];
             imagePreviewArea.innerHTML = '';
             imagePreviewArea.style.display = 'none';
-            userInput.style.height = 'auto';
+            userInput.style.height = 'auto'; // Reset height
 
             const messagesToSend = [
                 systemPrompt,
-                ...conversationHistory.slice(-currentSettings.contextLength).map(msg => {
-                    // Ensure only 'role' and 'content' are sent for history items
-                    return { role: msg.role, content: msg.content };
-                })
+                ...conversationHistory.slice(-currentSettings.contextLength)
             ];
-
 
             const requestBody = {
                 model: currentSettings.model,
@@ -1093,22 +1028,22 @@
                 stream: currentSettings.useStreaming,
             };
             if (currentSettings.useMaxTokens) requestBody.max_tokens = currentSettings.maxTokens;
-            if (currentSettings.useTemperature) requestBody.temperature = currentSettings.temperatureValue;
+            if (currentSettings.useTemperature) requestBody.temperature = currentSettings.temperature;
 
             await fetchAIResponse(requestBody);
         }
 
-        // Fetch Chat AI Response
+        // Fetch Chat AI Response (Unchanged, uses chat settings)
         async function fetchAIResponse(requestBody) {
             aiResponseController = new AbortController();
             const signal = aiResponseController.signal;
 
             try {
-                const response = await fetch(currentSettings.apiUrl, {
+                const response = await fetch(currentSettings.apiUrl, { // Uses chat apiUrl
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentSettings.apiKey}`
+                        'Authorization': `Bearer ${currentSettings.apiKey}` // Uses chat apiKey
                     },
                     body: JSON.stringify(requestBody),
                     signal: signal
@@ -1130,151 +1065,77 @@
             } catch (error) {
                  if (error.name === 'AbortError') {
                     console.log('Chat 请求被中止。');
-                    setSendingState(false); // Only set false if aborted, retry logic handles other cases
+                    setSendingState(false);
                     return;
                  }
                 console.error("Chat API 请求错误:", error);
                 if (currentRetry < maxRetries) {
                     currentRetry++;
-                    displayError(`Chat 请求失败: ${error.message} (正在重试 ${currentRetry}/${maxRetries})`, false);
+                    displayError(`Chat 请求失败: ${error.message} (正在重试 ${currentRetry}/${maxRetries})`, false); // Temporary status
                     await new Promise(resolve => setTimeout(resolve, 1500 * currentRetry));
-                    // Do not reset sending state here, fetchAIResponse will be called again
-                    await fetchAIResponse(requestBody); // Retry the request
+                    await fetchAIResponse(requestBody);
                 } else {
-                    displayError(`Chat API 请求失败: ${error.message} (已达最大重试次数)`, true);
-                    // conversationHistory.push({ role: 'system', content: `错误: ${error.message}` }); // Don't push system error to visible history
+                    displayError(`Chat API 请求失败: ${error.message} (已达最大重试次数)`, true); // Persistent error
+                    conversationHistory.push({ role: 'system', content: `错误: ${error.message}` });
                     displayMessage('error', `抱歉，与 AI 通信时遇到问题：${error.message}`);
-                    setSendingState(false); // Set false after max retries
+                    setSendingState(false);
                 }
             } finally {
-                 // If not retrying and not aborted, setSendingState(false) is handled by stream/json handlers
-                 if (aiResponseController && !signal.aborted && currentRetry >= maxRetries) {
-                    // This case might be redundant if stream/json handlers always set it.
-                 }
-                 aiResponseController = null; // Clear controller after request finishes or aborts
+                if (currentRetry === 0 || currentRetry >= maxRetries) {
+                    // Final state handled within stream/json handlers usually
+                }
+                 aiResponseController = null;
             }
         }
 
-        // Handle Stream Response (Chat)
+        // Handle Stream Response (Chat - Unchanged)
         async function handleStreamResponse(readableStream) {
             const reader = readableStream.getReader();
             const decoder = new TextDecoder('utf-8');
-            let aiMessageElements = displayMessage('ai', '', [], true); // Get nodes for update
-            let accumulatedThoughtStream = '';
-            let accumulatedResponseStream = '';
+            let aiResponseContent = '';
+            let aiMessageContainer = displayMessage('ai', '', [], true);
             let buffer = '';
-            let lastDeltaWasThoughtHeuristic = false;
-
 
             try {
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
-
                     buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n\n'); // Process complete SSE messages
-                    buffer = lines.pop() || ''; // Keep incomplete message in buffer
+                    const lines = buffer.split('\n\n');
+                    buffer = lines.pop() || '';
 
                     for (const lineBlock of lines) {
                          if (!lineBlock.trim()) continue;
-                        const sseLines = lineBlock.split('\n');
-                         for (const sseLine of sseLines) {
-                            if (sseLine.startsWith('data: ')) {
-                                const dataJson = sseLine.substring(6).trim();
+                        const linesInBlock = lineBlock.split('\n');
+                         for (const line of linesInBlock) {
+                            if (line.startsWith('data: ')) {
+                                const dataJson = line.substring(6).trim();
                                 if (dataJson === '[DONE]') {
-                                    // This outer break might be too aggressive if [DONE] is per chunk.
-                                    // For OpenAI, [DONE] is the final signal for the whole stream.
                                     console.log("Stream DONE signal received.");
-                                    // No 'break' here, let the outer loop finish with done=true
-                                    // The reader.read() will return done:true eventually.
-                                    continue;
+                                    break;
                                 }
                                 try {
                                     const data = JSON.parse(dataJson);
                                     if (data.choices && data.choices[0]?.delta?.content) {
                                         const deltaContent = data.choices[0].delta.content;
-                                        if (deltaContent) { // Ensure deltaContent is not null/undefined
-                                            if (currentSettings.showChainOfThought) {
-                                                // Heuristic for CoT: "Thinking..." or "**Bold Title**"
-                                                const isLikelyThoughtChunk = deltaContent.startsWith("Thinking...") ||
-                                                                             /^\s*\*\*[A-Za-z0-9\s-]+(\.{3})?\*\*/.test(deltaContent); // Match **Title...** or **Title**
-
-                                                // If it's a thought chunk, or the previous was and this isn't clearly a response start
-                                                if (isLikelyThoughtChunk || (lastDeltaWasThoughtHeuristic && !deltaContent.trim().match(/^[你好啊嗯是的]/i) && deltaContent.trim().length < 50 )) { // Avoid very short common replies being misclassified
-                                                    accumulatedThoughtStream += deltaContent;
-                                                    aiMessageElements.thoughtNode.innerHTML = renderMarkdown(accumulatedThoughtStream + '...');
-                                                    if (aiMessageElements.thoughtContainerNode.style.display === 'none' && accumulatedThoughtStream.trim() !== '') {
-                                                        aiMessageElements.thoughtContainerNode.style.display = 'block';
-                                                    }
-                                                    // If this chunk ends with multiple newlines or is a full thought block itself, next might be response or another thought
-                                                    lastDeltaWasThoughtHeuristic = !(deltaContent.endsWith("\n\n") || deltaContent.endsWith("\n\n\n"));
-                                                } else {
-                                                    accumulatedResponseStream += deltaContent;
-                                                    aiMessageElements.messageNode.innerHTML = renderMarkdown(accumulatedResponseStream + '...');
-                                                    lastDeltaWasThoughtHeuristic = false;
-                                                }
-                                            } else { // Not showing CoT, try to filter out CoT markers
-                                                const isPurelyThoughtMarker =
-                                                    (deltaContent.trim() === "Thinking...") ||
-                                                    (/^\s*\*\*[A-Za-z0-9\s-]+\*\*\s*$/.test(deltaContent.trim()) && deltaContent.trim().length < 70) || // Short bold title
-                                                    /^\s*\*\*[A-Za-z0-9\s-]+\*\*\s*\n{2,3}\s*$/.test(deltaContent.trim()); // Bold title with only newlines after
-
-                                                if (!isPurelyThoughtMarker || accumulatedResponseStream.trim() !== '') {
-                                                    accumulatedResponseStream += deltaContent;
-                                                    aiMessageElements.messageNode.innerHTML = renderMarkdown(accumulatedResponseStream + '...');
-                                                }
-                                            }
-                                            scrollToBottom();
-                                        }
+                                        aiResponseContent += deltaContent;
+                                        aiMessageContainer.innerHTML = renderMarkdown(aiResponseContent + '...');
+                                        scrollToBottom();
                                      }
                                 } catch (e) { console.error('Error parsing stream JSON:', e, 'JSON:', dataJson); }
                             }
                          }
-                         // If a block signaled DONE, this inner loop might complete, then outer loop continues.
+                         if (lineBlock.includes('data: [DONE]')) break;
                     }
-                } // End while true (reader loop)
-
-                // Final rendering after stream is complete
-                if (currentSettings.showChainOfThought) {
-                    aiMessageElements.thoughtNode.innerHTML = renderMarkdown(accumulatedThoughtStream);
-                    aiMessageElements.messageNode.innerHTML = renderMarkdown(accumulatedResponseStream);
-                    if (accumulatedThoughtStream.trim() === '') {
-                        aiMessageElements.thoughtContainerNode.style.display = 'none';
-                    }
-                     // If the response is empty but thoughts are not, and thoughts seems like the actual response
-                    if (accumulatedResponseStream.trim() === '' && accumulatedThoughtStream.trim() !== '' && !(/^\s*(\*\*[A-Za-z\s]+\*\*|Thinking\.\.\.)/m.test(accumulatedThoughtStream))) {
-                        aiMessageElements.messageNode.innerHTML = renderMarkdown(accumulatedThoughtStream); // Move thoughts to response
-                        aiMessageElements.thoughtNode.innerHTML = '';
-                        aiMessageElements.thoughtContainerNode.style.display = 'none';
-                        accumulatedResponseStream = accumulatedThoughtStream; // For history
-                        accumulatedThoughtStream = '';
-                    }
-
-                } else {
-                    aiMessageElements.messageNode.innerHTML = renderMarkdown(accumulatedResponseStream);
-                    if (aiMessageElements.thoughtContainerNode) aiMessageElements.thoughtContainerNode.style.display = 'none';
+                     if (buffer.includes('data: [DONE]')) break;
                 }
-
-                conversationHistory.push({
-                    role: 'assistant',
-                    content: accumulatedResponseStream.trim(),
-                    thoughtProcess: (currentSettings.showChainOfThought && accumulatedThoughtStream.trim() !== "") ? accumulatedThoughtStream.trim() : undefined
-                });
-
+                aiMessageContainer.innerHTML = renderMarkdown(aiResponseContent);
+                conversationHistory.push({ role: 'assistant', content: aiResponseContent });
             } catch (error) {
                 console.error("流式读取错误:", error);
                 displayError(`读取 AI 回复时出错: ${error.message}`, true);
-                // Append error to the current message bubble's content
-                const errorMarker = "\n\n[系统提示：读取 AI 回复流时发生错误，内容可能不完整]";
-                aiMessageElements.messageNode.innerHTML = renderMarkdown(accumulatedResponseStream + errorMarker);
-                if (currentSettings.showChainOfThought) {
-                    aiMessageElements.thoughtNode.innerHTML = renderMarkdown(accumulatedThoughtStream + errorMarker);
-                }
-                conversationHistory.push({
-                    role: 'assistant',
-                    content: accumulatedResponseStream.trim() + errorMarker,
-                    thoughtProcess: (currentSettings.showChainOfThought && accumulatedThoughtStream.trim() !== "") ? accumulatedThoughtStream.trim() + errorMarker : undefined
-                });
+                aiMessageContainer.innerHTML = renderMarkdown(aiResponseContent + "\n\n[读取中断]");
+                conversationHistory.push({ role: 'assistant', content: aiResponseContent + "\n[读取中断]" });
             } finally {
                 setSendingState(false); // End sending state here for stream
                 scrollToBottom();
@@ -1282,48 +1143,23 @@
             }
         }
 
-
-        // Handle JSON Response (Chat)
+        // Handle JSON Response (Chat - Unchanged)
         function handleJsonResponse(data) {
-            let aiResponseContent = '';
-            let thoughtProcessContent = ''; // For potential non-streamed CoT (less common)
-
             if (data.error) {
                  console.error("API Error:", data.error);
                  displayError(`AI 返回错误: ${data.error.message}`, true);
+                 conversationHistory.push({ role: 'system', content: `错误: ${data.error.message}` });
                  displayMessage('error', `抱歉，AI 处理时遇到问题：${data.error.message}`);
             } else if (data.choices && data.choices[0]?.message?.content) {
-                aiResponseContent = data.choices[0].message.content;
-                // Simple check if the whole response looks like a CoT block (less likely for non-stream)
-                if (currentSettings.showChainOfThought && /^\s*(\*\*[A-Za-z\s]+\*\*|Thinking\.\.\.)/m.test(aiResponseContent)) {
-                    const match = aiResponseContent.match(/(^\s*(\*\*[A-Za-z\s]+\*\*|Thinking\.\.\.)[\s\S]*?\n\n\n?)([\s\S]*)/m);
-                    if (match && match[3]) { // If we can split it
-                        thoughtProcessContent = match[1];
-                        aiResponseContent = match[3];
-                    } else { // Treat all as thought if no clear split
-                        thoughtProcessContent = aiResponseContent;
-                        aiResponseContent = ""; // Or a placeholder like "[思考完成，请查看思考过程]"
-                    }
-                }
-
-                const aiMsgElements = displayMessage('ai', aiResponseContent);
-                if (currentSettings.showChainOfThought && thoughtProcessContent && aiMsgElements.thoughtNode) {
-                    aiMsgElements.thoughtNode.innerHTML = renderMarkdown(thoughtProcessContent);
-                    aiMsgElements.thoughtContainerNode.style.display = 'block';
-                }
-
-                conversationHistory.push({
-                    role: 'assistant',
-                    content: aiResponseContent.trim(),
-                    thoughtProcess: (currentSettings.showChainOfThought && thoughtProcessContent.trim() !== "") ? thoughtProcessContent.trim() : undefined
-                });
-
+                const aiResponseContent = data.choices[0].message.content;
+                conversationHistory.push({ role: 'assistant', content: aiResponseContent });
+                displayMessage('ai', aiResponseContent);
             } else {
                 console.error("无效的 API 响应格式:", data);
                 displayError("收到了无效的 AI 响应格式。", true);
-                displayMessage('error', "抱歉，收到了无法解析的 AI 回复。");
+                 displayMessage('error', "抱歉，收到了无法解析的 AI 回复。");
             }
-            setSendingState(false);
+            setSendingState(false); // End sending state here for JSON
         }
 
         // --- Voice Input Functions ---
@@ -1331,15 +1167,15 @@
         // Update Voice Status Indicator
         let voiceStatusTimeout;
         function updateVoiceStatus(message, type = "info", duration = 0) { // type: info, recording, processing, success, error
-            clearTimeout(voiceStatusTimeout);
+            clearTimeout(voiceStatusTimeout); // Clear previous timeout
             if (!message) {
                 voiceStatusDiv.style.display = 'none';
                 voiceStatusDiv.className = '';
                 return;
             }
             voiceStatusDiv.textContent = message;
-            voiceStatusDiv.className = '';
-            voiceStatusDiv.classList.add(type);
+            voiceStatusDiv.className = ''; // Reset classes
+            voiceStatusDiv.classList.add(type); // Add type class for styling
             voiceStatusDiv.style.display = 'block';
 
             if (duration > 0) {
@@ -1359,15 +1195,16 @@
                  voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                  micPermissionGranted = true;
                  if (showStatus) updateVoiceStatus("麦克风已授权", "success", 2000);
+                 // Release the initial stream immediately
                  voiceStream.getTracks().forEach(track => track.stop());
                  voiceStream = null;
-                 voiceInputButton.disabled = !currentSettings.sttApiKey;
+                 voiceInputButton.disabled = !currentSettings.sttApiKey; // Re-enable based on key
                  return true;
              } catch (err) {
                  console.error("访问麦克风失败:", err);
                  if (showStatus) updateVoiceStatus("麦克风访问被拒绝", "error", 5000);
                  micPermissionGranted = false;
-                 voiceInputButton.disabled = true;
+                 voiceInputButton.disabled = true; // Keep disabled if permission denied
                  return false;
              }
          }
@@ -1377,7 +1214,8 @@
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                    resolve(reader.result);
+                    // Result includes "data:audio/webm;codecs=opus;base64," prefix
+                    resolve(reader.result); // Keep the full data URL
                 };
                 reader.onerror = (error) => reject(new Error("无法读取音频文件: " + error));
                 reader.readAsDataURL(blob);
@@ -1386,16 +1224,17 @@
 
         // Handle Voice Input Button Click
         async function handleVoiceInputClick() {
-             if (isSending) return;
+             if (isSending) return; // Don't interfere if chat is sending
 
              if (!currentSettings.sttApiKey) {
                  displayError("请先在设置中配置语音 API Key", false);
                  return;
              }
 
+             // Request permission first time or if previously denied
              if (!micPermissionGranted) {
                  const permissionOK = await requestMicrophonePermission();
-                 if (!permissionOK) return;
+                 if (!permissionOK) return; // Exit if permission still not granted
              }
 
              if (!isRecordingVoice) {
@@ -1408,27 +1247,28 @@
          // Start Voice Recording
         async function startVoiceRecording() {
              if (isRecordingVoice) return;
-             if (!micPermissionGranted) {
+             if (!micPermissionGranted) { // Double check
                   updateVoiceStatus("无麦克风权限", "error", 3000);
                   return;
               }
 
              updateVoiceStatus("正在初始化录音...", "info");
              audioChunks = [];
-             userInput.disabled = true;
+             userInput.disabled = true; // Disable text input
              sendButton.disabled = true;
              uploadButton.disabled = true;
-             clearButton.disabled = true;
+             clearButton.disabled = true; // Maybe allow clear? Let's disable for simplicity
 
              try {
                  voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
                  let options = {};
+                 // Prefer webm/opus if supported
                  if (MediaRecorder.isTypeSupported(AUDIO_MIME_TYPE)) {
                      options.mimeType = AUDIO_MIME_TYPE;
                  } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
                      options.mimeType = 'audio/ogg;codecs=opus';
-                 }
+                 } // else browser default
 
                  mediaRecorder = new MediaRecorder(voiceStream, options);
                  console.log("Using MIME type:", mediaRecorder.mimeType);
@@ -1440,6 +1280,7 @@
                  };
 
                  mediaRecorder.onstop = () => {
+                     // isRecordingVoice handled in stopVoiceRecording
                      console.log("Recording stopped, processing...");
                      updateVoiceStatus("处理语音...", "processing");
                      voiceInputButton.classList.remove('recording');
@@ -1447,7 +1288,7 @@
                      voiceInputMicIcon.style.display = 'none';
                      voiceInputStopIcon.style.display = 'none';
                      voiceInputSpinner.style.display = 'inline-block';
-                     voiceInputButton.disabled = true;
+                     voiceInputButton.disabled = true; // Disable during processing
 
                      if (voiceStream) {
                          voiceStream.getTracks().forEach(track => track.stop());
@@ -1470,7 +1311,7 @@
                  mediaRecorder.onerror = (event) => {
                      console.error("MediaRecorder 错误:", event.error);
                      updateVoiceStatus(`录音出错: ${event.error.name || '未知错误'}`, "error", 5000);
-                     stopVoiceRecording(true);
+                     stopVoiceRecording(true); // Force stop and cleanup
                  };
 
                  mediaRecorder.start();
@@ -1484,28 +1325,29 @@
              } catch (err) {
                  console.error("开始录音失败:", err);
                  updateVoiceStatus(`无法开始录音: ${err.message}`, "error", 5000);
-                 stopVoiceRecording(true);
+                 stopVoiceRecording(true); // Force cleanup
              }
          }
 
          // Stop Voice Recording
          function stopVoiceRecording(force = false) {
-            if (!isRecordingVoice && !force) return;
+            if (!isRecordingVoice && !force) return; // Already stopped or stopping
 
-            isRecordingVoice = false;
+            isRecordingVoice = false; // Set state immediately
 
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 try {
-                    mediaRecorder.stop();
+                    mediaRecorder.stop(); // Triggers 'onstop' naturally
                 } catch (error) {
                     console.error("停止 MediaRecorder 出错:", error);
                     updateVoiceStatus("停止录音时出错", "error", 3000);
-                    resetVoiceInputState();
+                    resetVoiceInputState(); // Force reset if stop fails
                 }
             } else {
-                 console.log("Forcing voice input state reset or recorder not active.");
-                 resetVoiceInputState(); // Ensure reset if forced or not active
-                 if (voiceStream) { // Clean up stream if stop didn't get called/finish
+                 // If forced or recorder wasn't active, just reset state
+                 console.log("Forcing voice input state reset.");
+                 resetVoiceInputState();
+                 if (voiceStream) {
                      voiceStream.getTracks().forEach(track => track.stop());
                      voiceStream = null;
                  }
@@ -1514,11 +1356,9 @@
 
         // Reset Voice Button and related states
         function resetVoiceInputState() {
-             isRecordingVoice = false; // Ensure this is set
+             isRecordingVoice = false;
              if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                  try {
-                      if (mediaRecorder.state === 'recording') mediaRecorder.stop();
-                  } catch(e) { console.warn("Error stopping recorder during reset:", e)}
+                  try { mediaRecorder.stop(); } catch(e) { console.warn("Error stopping recorder during reset:", e)}
              }
              mediaRecorder = null;
              audioChunks = [];
@@ -1528,18 +1368,20 @@
              }
 
              voiceInputButton.classList.remove('recording', 'processing');
-             // Re-enable voice button based on current state (not sending, permission, API key)
-             voiceInputButton.disabled = isSending || !micPermissionGranted || !currentSettings.sttApiKey;
+             voiceInputButton.disabled = isSending || !micPermissionGranted || !currentSettings.sttApiKey; // Reset disabled state correctly
              voiceInputMicIcon.style.display = 'inline-block';
              voiceInputStopIcon.style.display = 'none';
              voiceInputSpinner.style.display = 'none';
 
-             if (!isSending) { // Only re-enable if main chat isn't busy
+             // Re-enable other inputs only if chat isn't sending
+             if (!isSending) {
                  userInput.disabled = false;
                  sendButton.disabled = false;
                  uploadButton.disabled = false;
                  clearButton.disabled = false;
              }
+            // Optionally clear status, or let the final success/error message linger
+            // updateVoiceStatus("", "idle");
          }
 
 
@@ -1551,26 +1393,28 @@
              try {
                  const base64AudioWithPrefix = await blobToBase64(audioBlob);
 
+                 // Construct payload for multimodal endpoint (like Gemini)
                  const payload = {
-                     model: currentSettings.sttModel,
+                     model: currentSettings.sttModel, // Use STT model setting
                      messages: [{
                          role: "user",
                          content: [
                              { type: "text", text: TRANSCRIPTION_PROMPT },
                              {
-                                 type: "image_url",
+                                 type: "image_url", // Using image_url for audio base64 data URL
                                  image_url: { url: base64AudioWithPrefix }
                              }
                          ]
                      }],
-                     max_tokens: 1000
+                     // max_tokens might be needed depending on the model
+                     max_tokens: 1000 // Limit transcription tokens
                  };
 
-                 const response = await fetch(currentSettings.sttApiUrl, {
+                 const response = await fetch(currentSettings.sttApiUrl, { // Use STT URL setting
                      method: 'POST',
                      headers: {
                          'Content-Type': 'application/json',
-                         'Authorization': `Bearer ${currentSettings.sttApiKey}`
+                         'Authorization': `Bearer ${currentSettings.sttApiKey}` // Use STT Key setting
                      },
                      body: JSON.stringify(payload)
                  });
@@ -1585,6 +1429,7 @@
                  console.log("STT API Response:", data);
 
                  let transcript = "";
+                 // Check typical OpenAI/Gemini structures
                  if (data.choices && data.choices[0]?.message?.content) {
                      transcript = data.choices[0].message.content.trim();
                  } else if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
@@ -1603,13 +1448,15 @@
 
                  console.log("Raw Transcript:", transcript);
 
+                 // Decide whether to correct
                  if (currentSettings.enableVoiceCorrection) {
                      callAiForVoiceCorrection(transcript);
                  } else {
+                     // Put raw transcript directly into input
                      userInput.value = transcript;
-                     userInput.dispatchEvent(new Event('input'));
+                     userInput.dispatchEvent(new Event('input')); // Trigger height adjustment
                      updateVoiceStatus("语音识别完成", "success", 2000);
-                     resetVoiceInputState();
+                     resetVoiceInputState(); // Finish
                  }
 
              } catch (error) {
@@ -1632,20 +1479,21 @@
              updateVoiceStatus(`AI 修正中... (尝试 ${correctionRetryCount + 1}/${STT_MAX_RETRIES + 1})`, "processing");
 
              try {
+                 // Use the SAME STT API settings for correction (common practice for providers like Zetatechs)
                  const payload = {
-                     model: currentSettings.sttModel,
+                     model: currentSettings.sttModel, // Reuse STT model
                      messages: [{
                          role: "user",
-                         content: `${CORRECTION_PROMPT}\n---\n${originalText}\n---`
+                         content: `${CORRECTION_PROMPT}\n---\n${originalText}\n---` // Combined prompt and text
                      }],
-                     max_tokens: 1500
+                     max_tokens: 1500 // Allow more tokens for corrected output
                  };
 
-                 const response = await fetch(currentSettings.sttApiUrl, {
+                 const response = await fetch(currentSettings.sttApiUrl, { // Reuse STT URL
                      method: 'POST',
                      headers: {
                          'Content-Type': 'application/json',
-                         'Authorization': `Bearer ${currentSettings.sttApiKey}`
+                         'Authorization': `Bearer ${currentSettings.sttApiKey}` // Reuse STT Key
                      },
                      body: JSON.stringify(payload)
                  });
@@ -1660,17 +1508,19 @@
                  console.log("Correction API Response:", data);
 
                  let correctedText = "";
+                 // Check typical structures
                  if (data.choices && data.choices[0]?.message?.content) {
                      correctedText = data.choices[0].message.content.trim();
                  } else if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
                      correctedText = data.candidates[0].content.parts[0].text.trim();
                  } else {
                      console.warn("无法解析修正响应:", data);
+                     // Fallback to original text if correction fails to parse
                      correctedText = originalText;
                      updateVoiceStatus("修正响应解析失败，使用原始文本", "warning", 4000);
                  }
 
-                  if (!correctedText) {
+                  if (!correctedText) { // Handle case where correction API returns empty
                       console.warn("Correction returned empty text, using original.");
                       correctedText = originalText;
                       updateVoiceStatus("AI 修正返回为空，使用原始文本", "warning", 4000);
@@ -1678,9 +1528,9 @@
 
                  console.log("Corrected Text:", correctedText);
                  userInput.value = correctedText;
-                 userInput.dispatchEvent(new Event('input'));
+                 userInput.dispatchEvent(new Event('input')); // Trigger height adjustment
                  updateVoiceStatus("语音输入完成", "success", 2000);
-                 resetVoiceInputState();
+                 resetVoiceInputState(); // Finish
 
              } catch (error) {
                  console.error("AI 修正 API 出错:", error);
@@ -1690,6 +1540,7 @@
                      setTimeout(() => callAiForVoiceCorrection(originalText), 2000 * correctionRetryCount);
                  } else {
                      updateVoiceStatus(`AI 修正多次失败: ${error.message}`, "error", 5000);
+                     // Put original text in input as fallback after final failure
                      userInput.value = originalText;
                      userInput.dispatchEvent(new Event('input'));
                      resetVoiceInputState();
@@ -1706,14 +1557,14 @@
                 sendMessage();
             }
         });
-        userInput.addEventListener('input', () => {
+        userInput.addEventListener('input', () => { // Auto-resize textarea
             userInput.style.height = 'auto';
             userInput.style.height = userInput.scrollHeight + 'px';
         });
         clearButton.addEventListener('click', clearChat);
         uploadButton.addEventListener('click', () => {
-             if (!currentSettings.useVision && !isSending && !isRecordingVoice && uploadedFiles.length === 0) { // Only warn if uploading new files
-                 if (!confirm("图像理解功能当前未启用，图片可能不会被 AI 处理。仍要上传吗？")) {
+             if (!currentSettings.useVision && !isSending && !isRecordingVoice) {
+                 if (!confirm("图像理解功能未启用，图片不会发送给 AI。确定要上传吗？")) {
                      return;
                  }
              }
@@ -1725,58 +1576,35 @@
         });
         applySettingsButton.addEventListener('click', applySettings);
 
+        // Voice Input Button Listener
         voiceInputButton.addEventListener('click', handleVoiceInputClick);
 
 
+        // Font Size Buttons
         function setActiveFontButton(selectedSize) {
              [fontSmallButton, fontMediumButton, fontLargeButton].forEach(btn => {
                  btn.classList.toggle('active', btn.dataset.size === selectedSize);
              });
         }
-        fontSmallButton.addEventListener('click', () => { bodyElement.className = 'font-small'; setActiveFontButton('small'); localStorage.setItem('fontSizePref', 'small'); });
-        fontMediumButton.addEventListener('click', () => { bodyElement.className = 'font-medium'; setActiveFontButton('medium'); localStorage.setItem('fontSizePref', 'medium'); });
-        fontLargeButton.addEventListener('click', () => { bodyElement.className = 'font-large'; setActiveFontButton('large'); localStorage.setItem('fontSizePref', 'large'); });
+        fontSmallButton.addEventListener('click', () => { bodyElement.className = 'font-small'; setActiveFontButton('small'); });
+        fontMediumButton.addEventListener('click', () => { bodyElement.className = 'font-medium'; setActiveFontButton('medium'); });
+        fontLargeButton.addEventListener('click', () => { bodyElement.className = 'font-large'; setActiveFontButton('large'); });
 
-
+         // Settings Checkbox Interactivity
          enableMaxTokensCheckbox.addEventListener('change', () => { maxTokensInput.disabled = !enableMaxTokensCheckbox.checked; });
          enableTemperatureCheckbox.addEventListener('change', () => { temperatureInput.disabled = !enableTemperatureCheckbox.checked; });
 
         // --- Initialization ---
-        function loadSettings() {
-            // Load API keys and other sensitive/specific settings from inputs (values are pre-filled or user-entered)
-            // Load general preferences from localStorage if they exist
-            const savedFontSize = localStorage.getItem('fontSizePref');
-            if (savedFontSize) {
-                bodyElement.className = `font-${savedFontSize}`;
-                setActiveFontButton(savedFontSize);
-            } else {
-                bodyElement.className = 'font-medium'; // Default
-                setActiveFontButton('medium');
-            }
-
-            const showCoT = localStorage.getItem('showChainOfThoughtPref');
-            showChainOfThoughtCheckbox.checked = showCoT === 'true'; // Defaults to false if not set
-
-            // Apply all settings (including defaults from HTML and localStorage overrides)
-            applySettings();
-        }
-
-        // Save relevant general preferences (like CoT visibility)
-        showChainOfThoughtCheckbox.addEventListener('change', () => {
-            localStorage.setItem('showChainOfThoughtPref', showChainOfThoughtCheckbox.checked);
-            // Re-apply settings if this changes behavior immediately, or just wait for explicit apply
-            currentSettings.showChainOfThought = showChainOfThoughtCheckbox.checked; // Update live setting
-        });
-
-
-        loadSettings(); // Load and apply settings on page load
-
+        applySettings(); // Apply default/saved settings on load
+        // Passive permission check on load - don't nag, just update state
         requestMicrophonePermission(false).then(granted => {
              micPermissionGranted = granted;
-             voiceInputButton.disabled = isSending || !granted || !currentSettings.sttApiKey;
+             voiceInputButton.disabled = isSending || !granted || !currentSettings.sttApiKey; // Initial state
              voiceInputButton.title = granted && currentSettings.sttApiKey ? "语音输入" : "语音输入不可用 (检查权限/设置)";
              console.log("Initial Mic Permission Granted:", granted);
         });
+        // Add initial welcome message to history *without* displaying it again
+        // conversationHistory.push({ role: 'assistant', content: '您好！我是您的AI健康助手。请问您今天感觉哪里不舒服？可以详细描述一下您的症状，如果方便的话，也可以提供相关的图片。' });
 
     </script>
 </body>
