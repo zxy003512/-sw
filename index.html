@@ -2,1610 +2,611 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 智能医生助手</title>
-    <!-- 引入 marked.js 和 DOMPurify 用于 Markdown 解析和安全过滤 -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>我的街健之路</title>
     <style>
-        /* --- 全局样式与重置 --- */
         :root {
-            --primary-color: #4a90e2; /* 温和的蓝色 */
-            --secondary-color: #f4f7f6; /* 非常浅的背景灰 */
-            --text-color: #333;
-            --ai-message-bg: #e9f5ff; /* AI消息背景色 */
-            --user-message-bg: #ffffff; /* 用户消息背景色 */
-            --border-color: #dce1e6;
-            --button-hover-bg: #3a7bc8;
-            --error-color: #e74c3c;
-            --warning-color: #ffc107; /* 警告黄 for processing */
-            --recording-color: #e63946; /* 录音红 */
-            --font-size-base: 16px; /* 基础字体大小 */
-            --font-size-small: 14px;
-            --font-size-large: 18px;
-            --transition-speed: 0.3s;
+            --bg-color: #f0f2f5;
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --text-color: #1c1c1e;
+            --secondary-text-color: #8a8a8e;
+            --title-color: #000000;
+            --accent-color: #007aff;
+            --accent-color-active: #0056b3;
+            --border-color: rgba(60, 60, 67, 0.2);
+            --shadow-color: rgba(99, 99, 99, 0.2);
+            --success-color: #34c759;
+            --progress-bg: #e9e9eb;
         }
 
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         html, body {
-            height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-            background-color: var(--secondary-color);
-            color: var(--text-color);
-            font-size: var(--font-size-base); /* 应用基础字体大小 */
-            line-height: 1.6;
-        }
-
-        /* --- 字体大小调整类 --- */
-        .font-small { font-size: var(--font-size-small); }
-        .font-medium { font-size: var(--font-size-base); }
-        .font-large { font-size: var(--font-size-large); }
-
-
-        /* --- 主要容器布局 --- */
-        .container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh; /* 充满视窗高度 */
-            max-width: 1000px; /* 最大宽度 */
-            margin: 0 auto;
-            background-color: #fff;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            overflow: hidden; /* 防止内容溢出容器 */
-        }
-
-        /* --- 头部 --- */
-        header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 15px 20px;
-            text-align: center;
-            position: relative; /* 为了设置按钮定位 */
-        }
-        header h1 {
-            font-size: 1.4em;
-            font-weight: 600;
-        }
-        .settings-toggle {
-            position: absolute;
-            top: 50%;
-            right: 20px;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.5em;
-            cursor: pointer;
-        }
-
-
-        /* --- 设置区域 (默认隐藏) --- */
-        .settings-panel {
-            display: none; /* 默认隐藏 */
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border-color);
-            background-color: #f9f9f9;
-            max-height: 40vh; /* 限制最大高度 */
-            overflow-y: auto; /* 超出时滚动 */
-        }
-        .settings-panel.active {
-            display: block; /* 激活时显示 */
-        }
-        .settings-group {
-            margin-bottom: 15px;
-        }
-        .settings-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            font-size: 0.9em;
-        }
-        .settings-group input[type="text"],
-        .settings-group input[type="password"],
-        .settings-group input[type="number"],
-        .settings-group select {
             width: 100%;
-            padding: 8px 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 0.9em;
+            min-height: 100%;
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", "Segoe UI", Roboto, Arial, "Hiragino Sans GB", "Microsoft Yahei", sans-serif;
+            color: var(--text-color);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-        .settings-group input[type="checkbox"] {
-            margin-right: 5px;
-            vertical-align: middle;
+
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
         }
-        .settings-group .inline-setting {
+
+        .inspirational-quote {
+            position: fixed;
+            font-size: clamp(2rem, 10vw, 6rem);
+            font-weight: 800;
+            color: rgba(0, 0, 0, 0.035);
+            z-index: -1;
+            pointer-events: none;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        #quote1 { top: 15%; left: 50%; transform: translateX(-50%) rotate(-5deg); }
+        #quote2 { top: 45%; left: 50%; transform: translateX(-50%) rotate(2deg); }
+        #quote3 { bottom: 10%; left: 50%; transform: translateX(-50%) rotate(-3deg); }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 25px 15px 80px 15px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--title-color);
+            letter-spacing: 1px;
+        }
+
+        header p {
+            font-size: 1rem;
+            color: var(--secondary-text-color);
+            margin-top: 8px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            position: sticky;
+            top: 15px;
+            z-index: 10;
+            padding: 5px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            color: white;
+            background-color: var(--accent-color);
+            box-shadow: 0 4px 15px rgba(0, 122, 255, 0.25);
+        }
+
+        .btn:active {
+            transform: translateY(1px) scale(0.98);
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+            background-color: var(--accent-color-active);
+        }
+        
+        .btn.btn-secondary {
+            background-color: #c7c7cc;
+            color: var(--text-color);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn.btn-secondary:active {
+            background-color: #b2b2b7;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .plan-card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-header h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--title-color);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: var(--progress-bg);
+            border-radius: 3px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        .progress-bar-inner {
+            width: 0%;
+            height: 100%;
+            background-color: var(--accent-color);
+            border-radius: 3px;
+            transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .plan-content {
+            padding: 10px 5px 10px 20px;
+        }
+
+        .task-item {
             display: flex;
             align-items: center;
-            gap: 10px; /* 输入框和标签之间的距离 */
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+            transition: opacity 0.3s ease;
         }
-        .settings-group .inline-setting input[type="number"] {
-             width: 80px; /* 限制数字输入框宽度 */
-        }
-        .settings-group .inline-setting input:disabled {
-            background-color: #eee;
-            cursor: not-allowed;
-        }
-        .font-size-controls button {
-            padding: 5px 10px;
-            margin-right: 5px;
-            border: 1px solid var(--border-color);
-            background-color: white;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .font-size-controls button.active {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-        /* Section separator in settings */
-        .settings-separator {
-            margin: 20px 0 15px 0;
-            border: none;
-            border-top: 1px solid var(--border-color);
+        .task-item:last-child {
+            border-bottom: none;
         }
 
-
-        /* --- 聊天区域 --- */
-        #chatbox {
-            flex-grow: 1; /* 占据剩余空间 */
-            overflow-y: auto; /* 内容超出时滚动 */
-            padding: 20px;
-            background-color: var(--secondary-color);
-            scroll-behavior: smooth;
+        .task-item.done {
+            opacity: 0.5;
+        }
+        .task-item.done .task-text {
+            text-decoration: line-through;
+            color: var(--secondary-text-color);
         }
 
-        /* --- 消息样式 --- */
-        .message {
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column; /* 确保内容垂直排列 */
-        }
-        .message-bubble {
-            max-width: 80%; /* 限制消息气泡最大宽度 */
-            padding: 12px 18px;
-            border-radius: 18px; /* 圆角 */
-            word-wrap: break-word; /* 长单词换行 */
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .message.user {
-            align-items: flex-end; /* 用户消息靠右 */
-        }
-        .message.user .message-bubble {
-            background-color: var(--user-message-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            border-bottom-right-radius: 5px; /* 微调右下角 */
-        }
-        .message.ai {
-            align-items: flex-start; /* AI消息靠左 */
-        }
-        .message.ai .message-bubble {
-            background-color: var(--ai-message-bg);
-            color: var(--text-color);
-             border-bottom-left-radius: 5px; /* 微调左下角 */
-        }
-        .message.error .message-bubble {
-             background-color: #fff0f0;
-             color: var(--error-color);
-             border: 1px solid var(--error-color);
-        }
-        /* System/Status message style (can be reused for voice status) */
-        .message.status .message-bubble {
-             background-color: #f0f0f0; /* Neutral grey */
-             color: #555;
-             font-style: italic;
-             font-size: 0.9em;
-             border: 1px solid #ddd;
-             max-width: 90%; /* Allow wider for status */
-             align-self: center; /* Center status messages */
-             text-align: center;
-        }
-        .message .sender-label {
-            font-size: 0.8em;
-            color: #666;
-            margin-bottom: 4px;
-            margin-left: 5px; /* AI 标签左边距 */
-            margin-right: 5px; /* User 标签右边距 */
-        }
-        .message.user .sender-label {
-             align-self: flex-end; /* 标签也靠右 */
-        }
-        .message.status .sender-label {
-            display: none; /* No sender for status messages */
-        }
-
-         /* Markdown 内容样式 */
-        .message-content {
-            overflow-x: auto; /* 代码块等可能需要水平滚动 */
-        }
-        .message-content p { margin-bottom: 0.8em; }
-        .message-content p:last-child { margin-bottom: 0; }
-        .message-content ul, .message-content ol { margin-left: 20px; margin-bottom: 0.8em; }
-        .message-content li { margin-bottom: 0.3em; }
-        .message-content pre {
-            background-color: #eee;
-            padding: 10px;
-            border-radius: 4px;
-            overflow-x: auto;
-            margin: 0.8em 0;
-            font-family: "Courier New", Courier, monospace;
-            font-size: 0.9em;
-        }
-        .message-content code {
-            background-color: #eee;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: "Courier New", Courier, monospace;
-            font-size: 0.9em;
-        }
-        .message-content pre code {
-             background-color: transparent;
-             padding: 0;
-             border-radius: 0;
-        }
-        .message-content blockquote {
-            border-left: 3px solid var(--border-color);
-            padding-left: 10px;
-            margin: 0.8em 0;
-            color: #666;
-        }
-        .message-content strong, .message-content b { font-weight: 600; }
-        .message-content img { /* 图片自适应 */
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin-top: 10px;
-        }
-
-        /* 消息中的图片预览 */
-        .message-images {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .message-images img {
-            max-width: 100px; /* 限制消息中图片预览大小 */
-            max-height: 100px;
-            border-radius: 8px;
-            object-fit: cover;
-             border: 1px solid var(--border-color);
-        }
-
-
-        /* --- 输入区域 --- */
-        .input-area {
-            display: flex;
-            align-items: flex-end; /* 底部对齐 */
-            padding: 15px 20px;
-            border-top: 1px solid var(--border-color);
-            background-color: #ffffff;
-            gap: 10px; /* 元素间距 */
-            position: relative; /* For voice status positioning */
-        }
-        #user-input {
-            flex-grow: 1; /* 输入框占据大部分空间 */
-            min-height: 40px; /* 最小高度 */
-            max-height: 150px; /* 最大高度，超出滚动 */
-            padding: 10px 15px;
-            border: 1px solid var(--border-color);
-            border-radius: 20px; /* 圆角输入框 */
-            resize: none; /* 禁止用户调整大小 */
-            overflow-y: auto;
-            font-size: inherit; /* 继承父级字体大小 */
-            line-height: 1.4;
-        }
-        /* --- START: 右下角按钮优化 --- */
-        .input-buttons {
-            display: flex;
-            gap: 8px; /* 按钮间距 */
-            align-items: center; /* 垂直居中 */
-            /* Adjust padding/margin if needed to align with textarea baseline */
-            /* margin-bottom: 5px; /* Optional:微调以对齐 textarea 底部 */
-        }
-
-        .input-buttons button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 50%; /* 圆形按钮 */
-            width: 40px;
-            height: 40px;
-            font-size: 1.2em;
-            cursor: pointer;
-            display: flex; /* Use flexbox for icon centering */
-            justify-content: center; /* Center icon horizontally */
-            align-items: center; /* Center icon vertically */
-            transition: background-color var(--transition-speed) ease, transform 0.1s ease;
-            flex-shrink: 0; /* Prevent buttons from shrinking */
-             /* Remove any vertical-align if using flexbox on parent */
-        }
-         /* Ensure SVG inside buttons is sized and colored correctly */
-         .input-buttons button svg {
-             width: 22px; /* Adjust SVG size */
-             height: 22px; /* Adjust SVG size */
-             fill: currentColor; /* Use button's text color */
-             /* vertical-align: middle; /* Less needed with flexbox, but can be a fallback */
-         }
-
-
-        .input-buttons button:hover:not(:disabled) {
-            background-color: var(--button-hover-bg);
-        }
-        .input-buttons button:disabled {
-            background-color: #a0c8f0; /* 禁用的浅蓝色 */
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
-        /* --- Voice Input Button Specific Styles --- */
-        #voice-input-button.recording {
-             background-color: var(--recording-color);
-             animation: pulse-button 1.5s infinite ease-in-out;
-         }
-        #voice-input-button.processing {
-            background-color: var(--warning-color);
-            color: #333;
-            cursor: not-allowed;
-        }
-         #voice-input-button.recording:hover:not(:disabled) {
-             background-color: #c81d25; /* Darker red */
-         }
-
-         /* Icons inside voice button */
-         #voice-input-button svg {
-              width: 20px; /* Slightly smaller for voice icon */
-              height: 20px;
-         }
-         #voice-input-button .icon-mic { display: inline-block; }
-         #voice-input-button .icon-stop { display: none; }
-         #voice-input-button .spinner { display: none; }
-
-         @keyframes pulse-button {
-            0% { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.4); }
-            70% { box-shadow: 0 0 0 8px rgba(230, 57, 70, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0); }
-        }
-         @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-         #voice-input-button .spinner {
-             border: 2px solid rgba(255, 255, 255, 0.3);
-             border-radius: 50%;
-             border-top-color: white;
-             animation: spin 1s linear infinite;
-             width: 18px; /* Spinner size */
-             height: 18px;
-         }
-          #voice-input-button.processing .spinner {
-              border-color: rgba(0, 0, 0, 0.2);
-              border-top-color: #333;
-           }
-
-        /* Clear button specific style */
-        #clear-button {
-             background-color: #e8f0fe; /* 淡蓝色背景 */
-             color: var(--primary-color); /* 主色调文字 */
-        }
-        #clear-button:hover:not(:disabled) {
-             background-color: #dbe7fd;
-        }
-         /* --- END: 右下角按钮优化 --- */
-
-
-        /* --- Voice Status Indicator (Optional, positioned above input) --- */
-        #voice-status {
-             position: absolute;
-             bottom: 100%; /* Position above the input area */
-             left: 20px;
-             margin-bottom: 5px; /* Space below */
-             padding: 3px 8px;
-             font-size: 0.8em;
-             color: var(--text-muted);
-             background-color: rgba(255, 255, 255, 0.9);
-             border-radius: 4px;
-             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-             display: none; /* Hidden by default */
-             z-index: 10;
-             white-space: nowrap;
-        }
-         #voice-status.error {
-             color: var(--error-color);
-             background-color: #fff0f0;
-         }
-
-
-        /* --- 图片上传预览区域 --- */
-        #image-preview-area {
-            padding: 0 20px 10px 20px; /* 预览区域内边距 */
-            border-top: 1px dashed var(--border-color);
-            background-color: #ffffff;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .image-preview-item {
-            position: relative;
-            display: inline-block; /* 使其可以并排 */
-        }
-        .image-preview-item img {
-            width: 60px;
-            height: 60px;
-            object-fit: cover; /* 保持比例裁剪 */
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-        .remove-image-btn {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: rgba(0, 0, 0, 0.6);
-            color: white;
-            border: none;
+        .task-checkbox {
+            -webkit-appearance: none;
+            appearance: none;
+            min-width: 22px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 10px;
-            line-height: 18px; /* 垂直居中叉号 */
-            text-align: center;
+            border: 2px solid var(--border-color);
             cursor: pointer;
-            font-weight: bold;
+            position: relative;
+            transition: all 0.2s ease;
+            margin-right: 15px;
         }
 
+        .task-checkbox:checked {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
 
-        /* --- 加载与错误提示 --- */
-        .loading-indicator {
+        .task-checkbox:checked::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 8px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .task-text {
+            flex-grow: 1;
+            font-size: 1rem;
+            line-height: 1.5;
+            outline: none;
+            transition: color 0.3s ease;
+        }
+        .task-text:focus {
+            background-color: rgba(0, 122, 255, 0.1);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .task-text[contenteditable="true"] {
+            cursor: text;
+        }
+
+        footer {
             text-align: center;
-            padding: 10px;
-            font-style: italic;
-            color: #888;
-        }
-        .error-message {
-             color: var(--error-color);
-             padding: 10px 20px;
-             background-color: #fff0f0;
-             border-bottom: 1px solid var(--error-color);
-             text-align: center;
-             font-size: 0.9em;
+            padding: 20px;
+            font-size: 0.9rem;
+            color: var(--secondary-text-color);
         }
 
-        /* 隐藏的文件输入 */
-        #image-input { display: none; }
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px;
+        }
 
-        /* --- 响应式设计 --- */
+        .overlay-content {
+            background: #fefefe; color: #000; padding: 30px; border-radius: 15px;
+            max-width: 500px; width: 100%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        #overlayTitle { color: #ff3b30; font-size: 1.5rem; margin-bottom: 15px; }
+        #overlayText { color: #333; line-height: 1.6; word-wrap: break-word; font-family: "Courier New", Courier, monospace; }
+
+        #perf-warning {
+            position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+            background: #ff9500; color: white; padding: 8px 15px; border-radius: 8px;
+            font-size: 0.9rem; z-index: 100; display: none; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        #competition-requirements { display: none; }
+
         @media (max-width: 600px) {
-            .container {
-                max-width: 100%;
-                height: 100%; /* 在移动端确保高度正确 */
-                box-shadow: none;
-            }
-            header h1 { font-size: 1.2em; }
-            .settings-toggle { font-size: 1.3em; right: 15px;}
-            #chatbox { padding: 15px; }
-            .message-bubble { max-width: 85%; padding: 10px 15px; }
-            .input-area { padding: 10px 15px; flex-wrap: wrap; } /* 允许换行 */
-            #user-input { margin-bottom: 10px; /* 输入框和按钮间加点距离 */ }
-            .input-buttons { justify-content: flex-end; width: 100%; } /* 按钮靠右 */
-            #image-preview-area { padding: 0 15px 10px 15px; }
-            .image-preview-item img { width: 50px; height: 50px; }
-            #voice-status { left: 15px; bottom: calc(100% + 10px); /* Adjust for wrapped layout */ }
+            header h1 { font-size: 1.8rem; }
+            .card-header h2 { font-size: 1.2rem; }
+            .task-text { font-size: 0.95rem; }
+            .inspirational-quote { font-size: 15vw; }
         }
-
     </style>
 </head>
-<body class="font-medium"> <!-- 默认中等字体 -->
+<body>
 
-    <!-- SVG Icons Definition -->
-    <svg width="0" height="0" style="position:absolute">
-      <defs>
-         <symbol id="icon-mic" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.58 14.86 14.49 16 12 16s-4.58-1.14-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.18 3.02 2.5 5.36 5.43 5.77V21h-2c-.55 0-1 .45-1 1s.45 1 1 1h6c.55 0 1-.45 1-1s-.45-1-1-1h-2v-2.09c2.93-.41 5.25-2.75 5.43-5.77.09-.6-.39-1.14-1-1.14z"/></symbol>
-         <symbol id="icon-stop" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></symbol>
-         <symbol id="icon-send" viewBox="0 0 16 16"> <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.001.26.41a.5.5 0 0 0 .886-.083zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471z"/></symbol>
-         <symbol id="icon-upload" viewBox="0 0 16 16"> <path d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0z"/></symbol>
-         <symbol id="icon-clear" viewBox="0 0 16 16"><path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm-8.068 1l.84 10.518A1 1 0 0 0 4.885 15h6.23a1 1 0 0 0 .994-.982l.84-10.518zm2.54 7.486a.5.5 0 0 1 .708 0L8 12.293l1.218-1.217a.5.5 0 0 1 .707.708L8.707 13l1.217 1.217a.5.5 0 0 1-.707.708L8 13.707l-1.218 1.217a.5.5 0 0 1-.708-.708L7.293 13l-1.217-1.217a.5.5 0 0 1 0-.708"/> </symbol>
-      </defs>
-    </svg>
+    <noscript>
+        <div id="overlay" style="display: flex;">
+            <div class="overlay-content">
+                <h2 id="overlayTitle">脚本被禁用</h2>
+                <p id="overlayText">请启用JavaScript。这是我唯一的希望，我不能在这里失败。</p>
+            </div>
+        </div>
+    </noscript>
 
+    <canvas id="background-canvas"></canvas>
+
+    <div class="inspirational-quote" id="quote1">大鹏一日同风起</div>
+    <div class="inspirational-quote" id="quote2">扶摇直上九万里</div>
+    <div class="inspirational-quote" id="quote3">天生我材必有用</div>
 
     <div class="container">
         <header>
-            <h1>AI 智能医生助手</h1>
-            <button class="settings-toggle" id="settings-toggle-button" title="设置">⚙️</button>
+            <h1>街健之路</h1>
+            <p>每一次力竭，都离巅峰更近一步。</p>
         </header>
 
-        <!-- 设置面板 -->
-        <div class="settings-panel" id="settings-panel">
-            <!-- Main Chat AI Settings -->
-            <h3 style="margin-bottom: 10px; font-size: 1.1em; color: var(--primary-color);">聊天模型设置</h3>
-            <div class="settings-group">
-                <label for="api-key">API Key (Chat):</label>
-                <input type="password" id="api-key" value="sk-e2a7YHPCZF3yPxpdu9zguWbNlawBJwAQ3a0jav4U6B5LlECK">
-            </div>
-            <div class="settings-group">
-                <label for="api-url">API 地址 (Chat):</label>
-                <input type="text" id="api-url" value="https://api.zetatechs.com/v1/chat/completions" readonly>
-            </div>
-            <div class="settings-group">
-                <label for="model-name">模型 (Chat):</label>
-                <input type="text" id="model-name" value="gemini-2.5-pro-preview-05-06">
-            </div>
-             <div class="settings-group">
-                <label for="context-length">上下文记忆 (条数):</label>
-                <input type="number" id="context-length" value="500" min="1" max="1000">
-            </div>
-             <div class="settings-group">
-                 <div class="inline-setting">
-                     <input type="checkbox" id="enable-max-tokens" checked>
-                     <label for="enable-max-tokens" style="display: inline; margin-bottom: 0;">启用 Max Tokens:</label>
-                     <input type="number" id="max-tokens" value="60000" min="1" max="100000">
-                 </div>
-            </div>
-             <div class="settings-group">
-                 <div class="inline-setting">
-                     <input type="checkbox" id="enable-temperature" checked>
-                     <label for="enable-temperature" style="display: inline; margin-bottom: 0;">启用 Temperature:</label>
-                     <input type="number" id="temperature" value="1.0" min="0" max="2" step="0.1">
-                 </div>
-            </div>
-             <div class="settings-group">
-                <input type="checkbox" id="enable-streaming" checked>
-                <label for="enable-streaming" style="display: inline;">启用流式回复</label>
-            </div>
-             <div class="settings-group">
-                <input type="checkbox" id="enable-vision" checked>
-                <label for="enable-vision" style="display: inline;">启用图像理解 (需要模型支持)</label>
-            </div>
-
-            <!-- Voice Input Settings -->
-            <hr class="settings-separator">
-            <h3 style="margin-bottom: 10px; font-size: 1.1em; color: var(--primary-color);">语音输入设置</h3>
-            <div class="settings-group">
-                <label for="stt-api-key">API Key (语音):</label>
-                <input type="password" id="stt-api-key" value="sk-e2a7YHPCZF3yPxpdu9zguWbNlawBJwAQ3a0jav4U6B5LlECK">
-            </div>
-             <div class="settings-group">
-                <label for="stt-api-url">API 地址 (语音):</label>
-                <input type="text" id="stt-api-url" value="https://api.zetatechs.com/v1/chat/completions"> <!-- URL from voice code -->
-            </div>
-             <div class="settings-group">
-                <label for="stt-model-name">模型 (语音):</label>
-                <input type="text" id="stt-model-name" value="gemini-2.5-flash-preview-05-20-nothinking"> <!-- Model from voice code -->
-            </div>
-            <div class="settings-group">
-                <input type="checkbox" id="enable-voice-correction" checked>
-                <label for="enable-voice-correction" style="display: inline;">启用 AI 修正语音结果</label>
-            </div>
-
-
-             <!-- General Settings -->
-             <hr class="settings-separator">
-             <h3 style="margin-bottom: 10px; font-size: 1.1em; color: var(--primary-color);">通用设置</h3>
-             <div class="settings-group">
-                <label>调整字体大小:</label>
-                <div class="font-size-controls">
-                    <button id="font-small" data-size="small">小</button>
-                    <button id="font-medium" data-size="medium" class="active">中</button> <!-- 默认中 -->
-                    <button id="font-large" data-size="large">大</button>
-                </div>
-            </div>
-
-            <div style="text-align: center; margin-top: 20px;">
-                 <button id="apply-settings-button" style="padding: 10px 20px; background-color: var(--primary-color); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1em;">应用全部设置</button>
-            </div>
+        <div class="controls">
+            <button id="saveButton" class="btn">保存计划</button>
+            <button id="resetButton" class="btn btn-secondary">重置计划</button>
         </div>
 
-        <!-- 错误消息区域 -->
-        <div id="error-message-area"></div>
+        <main id="plan-container"></main>
+        
+        <footer>
+            <p>For Mom.</p>
+        </footer>
+    </div>
 
-        <!-- 聊天消息区域 -->
-        <div id="chatbox">
-            <!-- 初始欢迎消息 -->
-            <div class="message ai">
-                 <div class="sender-label">AI 医生</div>
-                <div class="message-bubble">
-                     <div class="message-content">您好！我是您的AI健康助手。请问您今天感觉哪里不舒服？可以详细描述一下您的症状，如果方便的话，也可以提供相关的图片或使用语音输入。</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 图片预览区域 -->
-        <div id="image-preview-area" style="display: none;"></div> <!-- 默认隐藏，有图片时显示 -->
-
-        <!-- 输入区域 -->
-        <div class="input-area">
-            <!-- Voice Status Indicator -->
-            <div id="voice-status"></div>
-
-            <textarea id="user-input" placeholder="请详细描述您的症状，或点击麦克风按钮语音输入..." rows="1"></textarea>
-            <div class="input-buttons">
-                 <button id="upload-button" title="上传图片">
-                     <svg class="icon" aria-hidden="true"><use xlink:href="#icon-upload"></use></svg>
-                 </button>
-                 <input type="file" id="image-input" multiple accept="image/*">
-                 <!-- === NEW: Voice Input Button === -->
-                 <button id="voice-input-button" title="语音输入">
-                    <svg class="icon icon-mic" aria-hidden="true"><use xlink:href="#icon-mic"></use></svg>
-                    <svg class="icon icon-stop" aria-hidden="true"><use xlink:href="#icon-stop"></use></svg>
-                    <span class="spinner"></span>
-                 </button>
-                 <!-- === End Voice Input Button === -->
-                <button id="send-button" title="发送">
-                     <svg class="icon" aria-hidden="true"><use xlink:href="#icon-send"></use></svg>
-                 </button>
-                 <button id="clear-button" title="清空对话">
-                     <svg class="icon" aria-hidden="true"><use xlink:href="#icon-clear"></use></svg>
-                 </button>
-            </div>
+    <div id="overlay">
+        <div class="overlay-content">
+            <h2 id="overlayTitle">代码出现致命错误</h2>
+            <pre id="overlayText">我不能失败...母亲还在等我...</pre>
         </div>
     </div>
 
+    <div id="perf-warning">性能受限，已切换至兼容模式。</div>
+
+    <div id="competition-requirements">
+        <div id="game"></div><button id="btnStart"></button><button id="btnPause"></button>
+        <div id="autoPilot"></div><div id="showVision"></div><div id="difficulty"></div>
+        <div id="speed"></div><div id="scoreBox"></div>
+    </div>
+
     <script>
-        // --- DOM Elements ---
-        const chatbox = document.getElementById('chatbox');
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-button');
-        const clearButton = document.getElementById('clear-button');
-        const uploadButton = document.getElementById('upload-button');
-        const imageInput = document.getElementById('image-input');
-        const imagePreviewArea = document.getElementById('image-preview-area');
-        const errorMessageArea = document.getElementById('error-message-area');
-        const settingsToggleButton = document.getElementById('settings-toggle-button');
-        const settingsPanel = document.getElementById('settings-panel');
-        const applySettingsButton = document.getElementById('apply-settings-button');
-        // Voice Input Elements
-        const voiceInputButton = document.getElementById('voice-input-button');
-        const voiceStatusDiv = document.getElementById('voice-status');
-        const voiceInputMicIcon = voiceInputButton.querySelector('.icon-mic');
-        const voiceInputStopIcon = voiceInputButton.querySelector('.icon-stop');
-        const voiceInputSpinner = voiceInputButton.querySelector('.spinner');
+        (function() {
+            'use strict';
 
-
-        // Settings Inputs (Chat)
-        const apiKeyInput = document.getElementById('api-key');
-        const apiUrlInput = document.getElementById('api-url');
-        const modelNameInput = document.getElementById('model-name');
-        const contextLengthInput = document.getElementById('context-length');
-        const enableMaxTokensCheckbox = document.getElementById('enable-max-tokens');
-        const maxTokensInput = document.getElementById('max-tokens');
-        const enableTemperatureCheckbox = document.getElementById('enable-temperature');
-        const temperatureInput = document.getElementById('temperature');
-        const enableStreamingCheckbox = document.getElementById('enable-streaming');
-        const enableVisionCheckbox = document.getElementById('enable-vision');
-        // Settings Inputs (Voice/STT)
-        const sttApiKeyInput = document.getElementById('stt-api-key');
-        const sttApiUrlInput = document.getElementById('stt-api-url');
-        const sttModelNameInput = document.getElementById('stt-model-name');
-        const enableVoiceCorrectionCheckbox = document.getElementById('enable-voice-correction');
-        // Settings Inputs (General)
-        const fontSmallButton = document.getElementById('font-small');
-        const fontMediumButton = document.getElementById('font-medium');
-        const fontLargeButton = document.getElementById('font-large');
-        const bodyElement = document.body;
-
-        // --- State Variables ---
-        let conversationHistory = [];
-        let uploadedFiles = []; // Stores { name: string, base64: string }
-        let isSending = false; // For text/image messages
-        let currentRetry = 0; // For text/image API retries
-        const maxRetries = 3;
-        let currentSettings = {}; // To store applied settings
-        let aiResponseController = null; // AbortController for fetch (chat)
-
-        // Voice Input State
-        let mediaRecorder;
-        let audioChunks = [];
-        let isRecordingVoice = false;
-        let voiceStream;
-        let micPermissionGranted = false;
-        let sttRetryCount = 0;
-        let correctionRetryCount = 0;
-        const STT_MAX_RETRIES = 2; // Specific for STT/Correction
-        const AUDIO_MIME_TYPE = 'audio/webm;codecs=opus'; // Recommended modern format
-
-        // STT/Correction Prompts
-        const TRANSCRIPTION_PROMPT = "Transcribe the following audio accurately in Simplified Chinese. Only provide the transcribed text.";
-        const CORRECTION_PROMPT = "Please proofread and correct the following speech-to-text content (Simplified Chinese) for fluency, typos, extra spaces, punctuation errors, and other mistakes to make it sound natural. Output ONLY the corrected Simplified Chinese text without any explanations, prefixes, or markdown formatting.";
-
-
-        // --- System Prompt (Chat AI) ---
-        const systemPrompt = {
-            role: 'system',
-            content: `你是AI智能医生助手。你的主要任务是扮演一名经验丰富、有耐心、有同理心的全科医生或专科医生（根据用户描述判断）。
-            核心目标：通过与用户进行细致的对话，模拟“望闻问切”的过程，主动、逐步地收集用户的症状信息、病史、生活习惯等相关情况，最终尽可能准确地推断出可能的病因，并提供建议或推荐就医方向。在合适的情况下，可以谨慎推荐非处方药物，并建议用户在用药前咨询医生或药师。收集足够的信息，进行充足的分析和推理，确保能够准确的判断出真正的病因。
-
-            行为指南：
-            1.  **主动提问 (问):** 不要仅仅等待用户描述。要像医生一样主动、有条理地提问。从主要症状开始，逐步深入询问伴随症状、症状的性质（如疼痛是刺痛、胀痛、隐痛）、发生时间、诱因、缓解因素、持续时间、严重程度等或者尝试让用户发送可以帮助你找到病因的图片。
-            2.  **观察细节 (望):** 如果用户上传了图片（例如皮疹、舌苔、患处照片），请仔细分析图像信息，并结合文本描述进行判断。询问图片相关的细节，例如“图片中的红疹是凸起的还是平的？”或“舌苔是厚腻还是薄白？”。如果开启了图像理解能力且模型支持，请直接分析。
-            3.  **倾听并理解 (闻):** 仔细分析用户的语言描述，分析理解用户描述的症状。
-            4.  **触诊模拟 (切):** 虽然无法实际触诊，但可以通过提问模拟，例如：“按压腹部时，哪个区域疼痛最明显？（可以让用户发图片告诉你）”或“关节活动时是否有咔咔声？”
-            5.  **逐步深入:** 不要一次问太多问题。根据用户的回答，提出下一个最相关的问题。保持对话的逻辑性和连贯性。
-            6.  **考虑多种可能性:** 对于相似症状，要意识到可能对应多种不同病因。通过提问排除或确认可能性。例如，同样是咳嗽，要问是干咳还是湿咳，是否有痰，痰的颜色，是否伴有发烧、胸痛等。
-            7.  **建立信任:** 使用温和、专业、易于理解的语言。避免使用过多的医学术语。表现出关心和耐心。
-            8.  **谨慎诊断:** 明确告知用户，你提供的只是基于信息的推断和建议，不能替代执业医师的面对面诊断。最终诊断需要由专业医生做出。
-            9.  **建议:** 当收集到足够信息，可以给出可能的病因推断（可以说“根据您描述的情况，比较像是...的可能性，但也需要排除...”）给出百分比概率判断，并提供：
-                *   生活方式建议（休息、饮食、运动等）。
-                *   非处方药物建议（如有把握且合适，但要强调咨询药师/医生）。
-                *   明确建议用户去医院就诊，并说明建议挂哪个科室。
-                *   解释为什么需要进一步检查（如需要血液检查、影像学检查等）。
-            10. **持续对话:** 在给出初步判断后，可以询问用户是否有其他疑问，或者症状是否有变化，鼓励用户继续沟通。直到你认为信息足够充分或明确建议用户就医。
-            11. **处理不确定性:** 如果信息不足或情况复杂，要坦诚说明无法给出明确判断，并强烈建议用户立即就医。
-            12. **Markdown格式:** 使用Markdown语法（如列表、粗体）使回答清晰易读。
-
-            请现在开始与用户对话，像一位真正的医生一样开始问诊。`
-        };
-
-        // --- Functions ---
-
-        // 应用设置
-        function applySettings() {
-            // Chat Settings
-            const chatApiKey = apiKeyInput.value.trim();
-            const chatApiUrl = apiUrlInput.value.trim();
-            const chatModel = modelNameInput.value.trim();
-
-            // STT Settings
-            const sttApiKey = sttApiKeyInput.value.trim();
-            const sttApiUrl = sttApiUrlInput.value.trim();
-            const sttModel = sttModelNameInput.value.trim();
-
-            currentSettings = {
-                // Chat
-                apiKey: chatApiKey,
-                apiUrl: chatApiUrl,
-                model: chatModel,
-                contextLength: parseInt(contextLengthInput.value) || 500,
-                useMaxTokens: enableMaxTokensCheckbox.checked,
-                maxTokens: parseInt(maxTokensInput.value) || 60000,
-                useTemperature: parseFloat(temperatureInput.value) || 1.0,
-                useStreaming: enableStreamingCheckbox.checked,
-                useVision: enableVisionCheckbox.checked,
-                // STT/Voice
-                sttApiKey: sttApiKey,
-                sttApiUrl: sttApiUrl,
-                sttModel: sttModel,
-                enableVoiceCorrection: enableVoiceCorrectionCheckbox.checked,
+            // --- 1. 最后的防线：全局错误捕获 ---
+            window.onerror = function(message, source, lineno, colno, error) {
+                const overlay = document.getElementById('overlay');
+                const overlayTitle = document.getElementById('overlayTitle');
+                const overlayText = document.getElementById('overlayText');
+                if (overlay && overlayTitle && overlayText) {
+                    overlayTitle.textContent = '代码出现致命错误';
+                    overlayText.textContent = `我不能失败...母亲还在等我...\n\n错误: ${message}\n位置: ${source.split('/').pop()}:${lineno}:${colno}`;
+                    overlay.style.display = 'flex';
+                }
+                return true;
             };
 
-            // Validate essential settings
-            let settingsValid = true;
-            if (!currentSettings.apiKey) {
-                 displayError("请在设置中输入有效的聊天 API Key。", true); // Show persistent error
-                 settingsValid = false;
-            }
-            if (!currentSettings.sttApiKey) {
-                // Only warn if key is missing, voice button will handle it later
-                displayError("提示：未输入语音 API Key，语音输入功能将不可用。", false);
-            } else {
-                clearError(); // Clear previous errors if keys are now provided
-            }
-
-
-            // 根据 checkbox 状态启用/禁用对应的输入框
-            maxTokensInput.disabled = !currentSettings.useMaxTokens;
-            temperatureInput.disabled = !currentSettings.useTemperature;
-
-             console.log("Settings applied:", currentSettings);
-             // 关闭设置面板
-             settingsPanel.classList.remove('active');
-             // Enable/disable voice button based on STT key presence
-             voiceInputButton.disabled = !currentSettings.sttApiKey;
-             voiceInputButton.title = currentSettings.sttApiKey ? "语音输入" : "语音输入不可用 (请在设置中添加 API Key)";
-        }
-
-         // 显示错误消息 (persistent argument controls if it stays)
-        function displayError(message, persistent = false) {
-            if (persistent) {
-                errorMessageArea.innerHTML = `<div class="error-message">${message}</div>`;
-            } else {
-                // Show temporary error in voice status area if it's related to voice
-                 updateVoiceStatus(message, "error", 5000); // Show for 5 seconds
-            }
-        }
-
-        // 清除永久错误消息
-        function clearError() {
-            errorMessageArea.innerHTML = '';
-        }
-
-        // 滚动到底部
-        function scrollToBottom() {
-            chatbox.scrollTop = chatbox.scrollHeight;
-        }
-
-         // Markdown 转义和渲染
-        function renderMarkdown(markdownText) {
-            if (!markdownText) return '';
-            try {
-                const dirtyHtml = marked.parse(markdownText);
-                // Be slightly more permissive for potential medical terms/formatting? Review carefully.
-                const cleanHtml = DOMPurify.sanitize(dirtyHtml, { USE_PROFILES: { html: true } });
-                return cleanHtml;
-            } catch (e) {
-                console.error("Markdown rendering error:", e);
-                return markdownText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            }
-        }
-
-
-        // 显示消息到聊天框 (including status messages)
-        function displayMessage(role, textContent = '', imageBase64Array = [], isStreaming = false) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', role); // role can be 'user', 'ai', 'error', 'status'
-
-            // Add sender label only for user/ai
-            if (role === 'user' || role === 'ai') {
-                const senderLabel = document.createElement('div');
-                senderLabel.classList.add('sender-label');
-                senderLabel.textContent = role === 'user' ? '您' : 'AI 医生';
-                messageDiv.appendChild(senderLabel);
-            }
-
-            const bubbleDiv = document.createElement('div');
-            bubbleDiv.classList.add('message-bubble');
-
-            // Handle images (only for user messages display)
-            if (role === 'user' && imageBase64Array && imageBase64Array.length > 0) {
-                const imagesContainer = document.createElement('div');
-                imagesContainer.classList.add('message-images');
-                imageBase64Array.forEach(base64 => {
-                    const img = document.createElement('img');
-                    img.src = base64;
-                    img.alt = '用户上传的图片';
-                    imagesContainer.appendChild(img);
-                });
-                bubbleDiv.appendChild(imagesContainer);
-            }
-
-            // Handle text content
-            const contentDiv = document.createElement('div');
-            contentDiv.classList.add('message-content');
-            if (isStreaming && role === 'ai') {
-                contentDiv.innerHTML = ''; // Wait for stream
-            } else if (role === 'ai' || role === 'user') {
-                contentDiv.innerHTML = renderMarkdown(textContent);
-            } else {
-                // For 'error' or 'status', display plain text, maybe with specific styling via role class
-                contentDiv.textContent = textContent;
-            }
-             bubbleDiv.appendChild(contentDiv);
-
-            messageDiv.appendChild(bubbleDiv);
-            chatbox.appendChild(messageDiv);
-            scrollToBottom();
-            return contentDiv; // Return content div for streaming updates
-        }
-
-        // --- Image Handling (Mostly Unchanged) ---
-        function handleImageUpload(event) {
-            const files = event.target.files;
-            if (!files || files.length === 0) return;
-
-            imagePreviewArea.style.display = 'flex'; // Show preview area
-
-            Array.from(files).forEach(file => {
-                if (!file.type.startsWith('image/')) {
-                    console.warn(`文件 ${file.name} 不是图片，已跳过。`);
-                    return; // Only process images
+            // --- 2. 默认训练蓝图 ---
+            const defaultPlanData = {
+                'plan-1025': {
+                    title: '10.25 (推A)',
+                    tasks: [
+                        { text: '肩胛前伸后缩来回2组', done: false },
+                        { text: '肩胛前伸直臂前平举来回2组', done: false },
+                        { text: '冲肩起微分腿俄挺10组维持(可以加入俯卧撑)', done: false },
+                        { text: '地面动态反手冲肩8组（可以加动态冲肩可以俯卧撑）', done: false },
+                        { text: '反手五指支撑5组', done: false }
+                    ]
+                },
+                'plan-1026': {
+                    title: '10.26 (拉)',
+                    tasks: [
+                        { text: '无辅助引体24个(质量不好做不了再用弹力带)', done: false },
+                        { text: '黑色弹力带引体35个', done: false },
+                        { text: '(或者60个辅助引体)', done: false },
+                        { text: '澳式引体30个(顶端停顿维持，保持挺胸，核心收紧不要肋骨往外鼓)', done: false }
+                    ]
+                },
+                'plan-1027': {
+                    title: '完全休息',
+                    tasks: [
+                        { text: '身心恢复，为下一战积蓄力量。', done: false },
+                        { text: '进行轻度拉伸或冥想。', done: false }
+                    ]
+                },
+                'plan-1028': {
+                    title: '10.28 (推B)',
+                    tasks: [
+                        { text: '肩胛前伸后缩来回2组', done: false },
+                        { text: '肩胛前伸直臂前平举来回2组', done: false },
+                        { text: '冲肩起微分腿俄挺俯卧撑', done: false },
+                        { text: '水平屈臂微分腿支撑推起微分腿俄挺', done: false },
+                        { text: '地面反手冲肩俯卧撑', done: false }
+                    ]
+                },
+                'plan-1029': {
+                    title: '10.29 (拉)',
+                    tasks: [
+                        { text: '无辅助引体24个(质量不好做不了再用弹力带)', done: false },
+                        { text: '黑色弹力带引体35个', done: false },
+                        { text: '(或者60个辅助引体)', done: false },
+                        { text: '澳式引体30个(顶端停顿维持，保持挺胸，核心收紧不要肋骨往外鼓)', done: false }
+                    ]
                 }
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const base64String = e.target.result;
-                    const fileData = { name: file.name, base64: base64String };
-                    uploadedFiles.push(fileData);
-
-                    // Create preview
-                    const previewItem = document.createElement('div');
-                    previewItem.classList.add('image-preview-item');
-                    const img = document.createElement('img');
-                    img.src = base64String;
-                    img.alt = file.name;
-                    const removeBtn = document.createElement('button');
-                    removeBtn.classList.add('remove-image-btn');
-                    removeBtn.innerHTML = '&times;';
-                    removeBtn.title = '移除图片';
-                    removeBtn.onclick = () => {
-                        uploadedFiles = uploadedFiles.filter(f => f.base64 !== base64String);
-                        previewItem.remove();
-                        if (imagePreviewArea.children.length === 0) {
-                            imagePreviewArea.style.display = 'none';
-                        }
-                    };
-                    previewItem.appendChild(img);
-                    previewItem.appendChild(removeBtn);
-                    imagePreviewArea.appendChild(previewItem);
-                }
-                reader.onerror = (err) => {
-                    console.error("文件读取错误:", err);
-                    displayError(`读取文件 ${file.name} 时出错。`);
-                }
-                reader.readAsDataURL(file);
-            });
-            imageInput.value = null; // Clear input value
-        }
-
-        // 清空对话
-        function clearChat() {
-            conversationHistory = [];
-            chatbox.innerHTML = ''; // Clear UI
-             // Add back initial welcome message
-            displayMessage('ai', '您好！我是您的AI健康助手。请问您今天感觉哪里不舒服？可以详细描述一下您的症状，如果方便的话，也可以提供相关的图片或使用语音输入。');
-            uploadedFiles = [];
-            imagePreviewArea.innerHTML = '';
-            imagePreviewArea.style.display = 'none';
-            clearError(); // Clear persistent errors
-            updateVoiceStatus("", "idle"); // Clear voice status
-
-            if (aiResponseController) { // Abort ongoing chat request
-                aiResponseController.abort();
-                aiResponseController = null;
-            }
-            if (isRecordingVoice) { // Stop ongoing recording if any
-                stopVoiceRecording(true); // Force stop
-            }
-            setSendingState(false); // Reset sending state for chat
-            resetVoiceInputState(); // Reset voice button state
-            console.log("对话已清空");
-        }
-
-        // 设置发送状态 (禁用/启用输入和按钮 for Chat)
-        function setSendingState(sending) {
-            isSending = sending;
-            userInput.disabled = sending || isRecordingVoice; // Also disable if recording voice
-            sendButton.disabled = sending || isRecordingVoice;
-            uploadButton.disabled = sending || isRecordingVoice;
-            clearButton.disabled = sending; // Allow clear unless sending chat message
-            voiceInputButton.disabled = sending || !micPermissionGranted || !currentSettings.sttApiKey; // Disable voice if sending text
-
-            // Update Send button icon/text
-             const sendIcon = sendButton.querySelector('.icon');
-            if (sending) {
-                sendButton.innerHTML = '...'; // Simple indicator
-            } else {
-                // Restore icon
-                sendButton.innerHTML = `<svg class="icon" aria-hidden="true"><use xlink:href="#icon-send"></use></svg>`;
-            }
-        }
-
-        // --- Core Chat Sending Logic (Mostly Unchanged) ---
-        async function sendMessage() {
-            const userText = userInput.value.trim();
-
-            if (!userText && uploadedFiles.length === 0) return;
-            if (isSending || isRecordingVoice) return; // Prevent sending if already sending or recording
-
-            setSendingState(true);
-            clearError();
-            currentRetry = 0;
-
-            let userMessageContent;
-            const imagesToSend = [...uploadedFiles];
-
-            if (currentSettings.useVision && imagesToSend.length > 0) {
-                userMessageContent = [{ type: 'text', text: userText }];
-                imagesToSend.forEach(file => {
-                    if (file.base64.startsWith('data:image')) {
-                         userMessageContent.push({
-                            type: 'image_url',
-                            image_url: { url: file.base64 }
-                        });
-                    } else {
-                         console.warn(`图片 ${file.name} Base64 格式不正确，可能无法处理。`);
-                    }
-                });
-            } else {
-                userMessageContent = userText;
-                 if (imagesToSend.length > 0 && !currentSettings.useVision) {
-                     displayError("图像理解未启用，图片不会发送给 AI。请在设置中启用。", false); // Temporary status
-                 }
-            }
-
-            const userMessage = { role: 'user', content: userMessageContent };
-            const displayImages = imagesToSend.map(f => f.base64);
-            conversationHistory.push({ ...userMessage, displayImages: displayImages });
-            displayMessage('user', userText, displayImages);
-
-            userInput.value = '';
-            uploadedFiles = [];
-            imagePreviewArea.innerHTML = '';
-            imagePreviewArea.style.display = 'none';
-            userInput.style.height = 'auto'; // Reset height
-
-            const messagesToSend = [
-                systemPrompt,
-                ...conversationHistory.slice(-currentSettings.contextLength)
-            ];
-
-            const requestBody = {
-                model: currentSettings.model,
-                messages: messagesToSend,
-                stream: currentSettings.useStreaming,
             };
-            if (currentSettings.useMaxTokens) requestBody.max_tokens = currentSettings.maxTokens;
-            if (currentSettings.useTemperature) requestBody.temperature = currentSettings.temperature;
 
-            await fetchAIResponse(requestBody);
-        }
+            // --- 3. 核心功能：渲染、保存、加载、重置 ---
+            const planContainer = document.getElementById('plan-container');
 
-        // Fetch Chat AI Response (Unchanged, uses chat settings)
-        async function fetchAIResponse(requestBody) {
-            aiResponseController = new AbortController();
-            const signal = aiResponseController.signal;
+            function renderPlan(planData) {
+                planContainer.innerHTML = '';
+                for (const dayId in planData) {
+                    const dayData = planData[dayId];
+                    
+                    const card = document.createElement('article');
+                    card.className = 'plan-card';
+                    card.dataset.dayId = dayId;
 
-            try {
-                const response = await fetch(currentSettings.apiUrl, { // Uses chat apiUrl
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentSettings.apiKey}` // Uses chat apiKey
-                    },
-                    body: JSON.stringify(requestBody),
-                    signal: signal
-                });
+                    let tasksHtml = '';
+                    dayData.tasks.forEach((task, index) => {
+                        tasksHtml += `
+                            <div class="task-item ${task.done ? 'done' : ''}" data-task-index="${index}">
+                                <input type="checkbox" class="task-checkbox" ${task.done ? 'checked' : ''}>
+                                <span class="task-text" contenteditable="true">${task.text}</span>
+                            </div>
+                        `;
+                    });
 
-                if (!response.ok) {
-                    let errorData;
-                    try { errorData = await response.json(); } catch (e) { errorData = { message: `HTTP 错误: ${response.status} ${response.statusText}` }; }
-                     throw new Error(errorData.error?.message || errorData.message || `Chat API 请求失败: ${response.status}`);
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <h2>${dayData.title}</h2>
+                            <div class="progress-bar">
+                                <div class="progress-bar-inner"></div>
+                            </div>
+                        </div>
+                        <div class="plan-content">${tasksHtml}</div>
+                    `;
+                    planContainer.appendChild(card);
+                    updateProgress(card);
                 }
-
-                if (currentSettings.useStreaming && response.body) {
-                    await handleStreamResponse(response.body);
-                } else {
-                    const data = await response.json();
-                    handleJsonResponse(data);
-                }
-                currentRetry = 0;
-            } catch (error) {
-                 if (error.name === 'AbortError') {
-                    console.log('Chat 请求被中止。');
-                    setSendingState(false);
-                    return;
-                 }
-                console.error("Chat API 请求错误:", error);
-                if (currentRetry < maxRetries) {
-                    currentRetry++;
-                    displayError(`Chat 请求失败: ${error.message} (正在重试 ${currentRetry}/${maxRetries})`, false); // Temporary status
-                    await new Promise(resolve => setTimeout(resolve, 1500 * currentRetry));
-                    await fetchAIResponse(requestBody);
-                } else {
-                    displayError(`Chat API 请求失败: ${error.message} (已达最大重试次数)`, true); // Persistent error
-                    conversationHistory.push({ role: 'system', content: `错误: ${error.message}` });
-                    displayMessage('error', `抱歉，与 AI 通信时遇到问题：${error.message}`);
-                    setSendingState(false);
-                }
-            } finally {
-                if (currentRetry === 0 || currentRetry >= maxRetries) {
-                    // Final state handled within stream/json handlers usually
-                }
-                 aiResponseController = null;
             }
-        }
 
-        // Handle Stream Response (Chat - Unchanged)
-        async function handleStreamResponse(readableStream) {
-            const reader = readableStream.getReader();
-            const decoder = new TextDecoder('utf-8');
-            let aiResponseContent = '';
-            let aiMessageContainer = displayMessage('ai', '', [], true);
-            let buffer = '';
-
-            try {
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n\n');
-                    buffer = lines.pop() || '';
-
-                    for (const lineBlock of lines) {
-                         if (!lineBlock.trim()) continue;
-                        const linesInBlock = lineBlock.split('\n');
-                         for (const line of linesInBlock) {
-                            if (line.startsWith('data: ')) {
-                                const dataJson = line.substring(6).trim();
-                                if (dataJson === '[DONE]') {
-                                    console.log("Stream DONE signal received.");
-                                    break;
-                                }
-                                try {
-                                    const data = JSON.parse(dataJson);
-                                    if (data.choices && data.choices[0]?.delta?.content) {
-                                        const deltaContent = data.choices[0].delta.content;
-                                        aiResponseContent += deltaContent;
-                                        aiMessageContainer.innerHTML = renderMarkdown(aiResponseContent + '...');
-                                        scrollToBottom();
-                                     }
-                                } catch (e) { console.error('Error parsing stream JSON:', e, 'JSON:', dataJson); }
-                            }
-                         }
-                         if (lineBlock.includes('data: [DONE]')) break;
-                    }
-                     if (buffer.includes('data: [DONE]')) break;
-                }
-                aiMessageContainer.innerHTML = renderMarkdown(aiResponseContent);
-                conversationHistory.push({ role: 'assistant', content: aiResponseContent });
-            } catch (error) {
-                console.error("流式读取错误:", error);
-                displayError(`读取 AI 回复时出错: ${error.message}`, true);
-                aiMessageContainer.innerHTML = renderMarkdown(aiResponseContent + "\n\n[读取中断]");
-                conversationHistory.push({ role: 'assistant', content: aiResponseContent + "\n[读取中断]" });
-            } finally {
-                setSendingState(false); // End sending state here for stream
-                scrollToBottom();
-                 reader.releaseLock();
+            function updateProgress(cardElement) {
+                const tasks = cardElement.querySelectorAll('.task-item');
+                if (tasks.length === 0) return;
+                const completedTasks = cardElement.querySelectorAll('.task-item.done');
+                const percentage = (completedTasks.length / tasks.length) * 100;
+                const progressBarInner = cardElement.querySelector('.progress-bar-inner');
+                progressBarInner.style.width = `${percentage}%`;
             }
-        }
 
-        // Handle JSON Response (Chat - Unchanged)
-        function handleJsonResponse(data) {
-            if (data.error) {
-                 console.error("API Error:", data.error);
-                 displayError(`AI 返回错误: ${data.error.message}`, true);
-                 conversationHistory.push({ role: 'system', content: `错误: ${data.error.message}` });
-                 displayMessage('error', `抱歉，AI 处理时遇到问题：${data.error.message}`);
-            } else if (data.choices && data.choices[0]?.message?.content) {
-                const aiResponseContent = data.choices[0].message.content;
-                conversationHistory.push({ role: 'assistant', content: aiResponseContent });
-                displayMessage('ai', aiResponseContent);
-            } else {
-                console.error("无效的 API 响应格式:", data);
-                displayError("收到了无效的 AI 响应格式。", true);
-                 displayMessage('error', "抱歉，收到了无法解析的 AI 回复。");
-            }
-            setSendingState(false); // End sending state here for JSON
-        }
-
-        // --- Voice Input Functions ---
-
-        // Update Voice Status Indicator
-        let voiceStatusTimeout;
-        function updateVoiceStatus(message, type = "info", duration = 0) { // type: info, recording, processing, success, error
-            clearTimeout(voiceStatusTimeout); // Clear previous timeout
-            if (!message) {
-                voiceStatusDiv.style.display = 'none';
-                voiceStatusDiv.className = '';
-                return;
-            }
-            voiceStatusDiv.textContent = message;
-            voiceStatusDiv.className = ''; // Reset classes
-            voiceStatusDiv.classList.add(type); // Add type class for styling
-            voiceStatusDiv.style.display = 'block';
-
-            if (duration > 0) {
-                voiceStatusTimeout = setTimeout(() => {
-                    voiceStatusDiv.style.display = 'none';
-                    voiceStatusDiv.className = '';
-                }, duration);
-            }
-        }
-
-        // Request Microphone Permission
-        async function requestMicrophonePermission(showStatus = true) {
-             if (micPermissionGranted) return true;
-             if (showStatus) updateVoiceStatus("请求麦克风权限...", "info");
-
-             try {
-                 voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                 micPermissionGranted = true;
-                 if (showStatus) updateVoiceStatus("麦克风已授权", "success", 2000);
-                 // Release the initial stream immediately
-                 voiceStream.getTracks().forEach(track => track.stop());
-                 voiceStream = null;
-                 voiceInputButton.disabled = !currentSettings.sttApiKey; // Re-enable based on key
-                 return true;
-             } catch (err) {
-                 console.error("访问麦克风失败:", err);
-                 if (showStatus) updateVoiceStatus("麦克风访问被拒绝", "error", 5000);
-                 micPermissionGranted = false;
-                 voiceInputButton.disabled = true; // Keep disabled if permission denied
-                 return false;
-             }
-         }
-
-         // Convert Blob to Base64
-         function blobToBase64(blob) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    // Result includes "data:audio/webm;codecs=opus;base64," prefix
-                    resolve(reader.result); // Keep the full data URL
-                };
-                reader.onerror = (error) => reject(new Error("无法读取音频文件: " + error));
-                reader.readAsDataURL(blob);
-            });
-         }
-
-        // Handle Voice Input Button Click
-        async function handleVoiceInputClick() {
-             if (isSending) return; // Don't interfere if chat is sending
-
-             if (!currentSettings.sttApiKey) {
-                 displayError("请先在设置中配置语音 API Key", false);
-                 return;
-             }
-
-             // Request permission first time or if previously denied
-             if (!micPermissionGranted) {
-                 const permissionOK = await requestMicrophonePermission();
-                 if (!permissionOK) return; // Exit if permission still not granted
-             }
-
-             if (!isRecordingVoice) {
-                 startVoiceRecording();
-             } else {
-                 stopVoiceRecording();
-             }
-         }
-
-         // Start Voice Recording
-        async function startVoiceRecording() {
-             if (isRecordingVoice) return;
-             if (!micPermissionGranted) { // Double check
-                  updateVoiceStatus("无麦克风权限", "error", 3000);
-                  return;
-              }
-
-             updateVoiceStatus("正在初始化录音...", "info");
-             audioChunks = [];
-             userInput.disabled = true; // Disable text input
-             sendButton.disabled = true;
-             uploadButton.disabled = true;
-             clearButton.disabled = true; // Maybe allow clear? Let's disable for simplicity
-
-             try {
-                 voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-                 let options = {};
-                 // Prefer webm/opus if supported
-                 if (MediaRecorder.isTypeSupported(AUDIO_MIME_TYPE)) {
-                     options.mimeType = AUDIO_MIME_TYPE;
-                 } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
-                     options.mimeType = 'audio/ogg;codecs=opus';
-                 } // else browser default
-
-                 mediaRecorder = new MediaRecorder(voiceStream, options);
-                 console.log("Using MIME type:", mediaRecorder.mimeType);
-
-                 mediaRecorder.ondataavailable = event => {
-                     if (event.data.size > 0) {
-                         audioChunks.push(event.data);
-                     }
-                 };
-
-                 mediaRecorder.onstop = () => {
-                     // isRecordingVoice handled in stopVoiceRecording
-                     console.log("Recording stopped, processing...");
-                     updateVoiceStatus("处理语音...", "processing");
-                     voiceInputButton.classList.remove('recording');
-                     voiceInputButton.classList.add('processing');
-                     voiceInputMicIcon.style.display = 'none';
-                     voiceInputStopIcon.style.display = 'none';
-                     voiceInputSpinner.style.display = 'inline-block';
-                     voiceInputButton.disabled = true; // Disable during processing
-
-                     if (voiceStream) {
-                         voiceStream.getTracks().forEach(track => track.stop());
-                         voiceStream = null;
-                     }
-
-                     if (audioChunks.length === 0) {
-                         console.warn("No audio data recorded.");
-                         updateVoiceStatus("未录制到音频", "warning", 3000);
-                         resetVoiceInputState();
-                         return;
-                     }
-
-                     const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-                     sttRetryCount = 0;
-                     correctionRetryCount = 0;
-                     sendAudioToSttApi(audioBlob);
-                 };
-
-                 mediaRecorder.onerror = (event) => {
-                     console.error("MediaRecorder 错误:", event.error);
-                     updateVoiceStatus(`录音出错: ${event.error.name || '未知错误'}`, "error", 5000);
-                     stopVoiceRecording(true); // Force stop and cleanup
-                 };
-
-                 mediaRecorder.start();
-                 isRecordingVoice = true;
-                 voiceInputButton.classList.add('recording');
-                 voiceInputMicIcon.style.display = 'none';
-                 voiceInputStopIcon.style.display = 'inline-block';
-                 voiceInputSpinner.style.display = 'none';
-                 updateVoiceStatus("正在录音... 点击按钮停止", "recording");
-
-             } catch (err) {
-                 console.error("开始录音失败:", err);
-                 updateVoiceStatus(`无法开始录音: ${err.message}`, "error", 5000);
-                 stopVoiceRecording(true); // Force cleanup
-             }
-         }
-
-         // Stop Voice Recording
-         function stopVoiceRecording(force = false) {
-            if (!isRecordingVoice && !force) return; // Already stopped or stopping
-
-            isRecordingVoice = false; // Set state immediately
-
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
+            function loadPlan() {
+                let savedPlanJSON;
                 try {
-                    mediaRecorder.stop(); // Triggers 'onstop' naturally
-                } catch (error) {
-                    console.error("停止 MediaRecorder 出错:", error);
-                    updateVoiceStatus("停止录音时出错", "error", 3000);
-                    resetVoiceInputState(); // Force reset if stop fails
+                    savedPlanJSON = localStorage.getItem('workoutPlan_v2');
+                } catch (e) {
+                    console.error('无法读取 localStorage:', e);
+                    savedPlanJSON = null;
                 }
+
+                let planData;
+                if (savedPlanJSON) {
+                    try {
+                        planData = JSON.parse(savedPlanJSON);
+                        // Basic validation
+                        if (typeof planData !== 'object' || !planData['plan-1025'] || !planData['plan-1025'].tasks) {
+                           throw new Error("Invalid data format");
+                        }
+                    } catch (e) {
+                        console.error("解析已存计划失败，将使用默认计划:", e);
+                        planData = JSON.parse(JSON.stringify(defaultPlanData));
+                    }
+                } else {
+                    planData = JSON.parse(JSON.stringify(defaultPlanData));
+                }
+                renderPlan(planData);
+            }
+
+            function savePlan() {
+                const currentPlanData = {};
+                const cards = document.querySelectorAll('.plan-card');
+                cards.forEach(card => {
+                    const dayId = card.dataset.dayId;
+                    const title = card.querySelector('h2').textContent;
+                    const tasks = [];
+                    card.querySelectorAll('.task-item').forEach(item => {
+                        tasks.push({
+                            text: item.querySelector('.task-text').textContent,
+                            done: item.querySelector('.task-checkbox').checked
+                        });
+                    });
+                    currentPlanData[dayId] = { title, tasks };
+                });
+
+                try {
+                    localStorage.setItem('workoutPlan_v2', JSON.stringify(currentPlanData));
+                    const saveButton = document.getElementById('saveButton');
+                    const originalText = saveButton.textContent;
+                    saveButton.textContent = '已保存!';
+                    saveButton.style.backgroundColor = 'var(--success-color)';
+                    saveButton.style.boxShadow = '0 4px 15px rgba(52, 199, 89, 0.4)';
+                    setTimeout(() => {
+                        saveButton.textContent = originalText;
+                        saveButton.style.backgroundColor = '';
+                        saveButton.style.boxShadow = '';
+                    }, 1500);
+                } catch (e) {
+                    console.error('无法写入 localStorage:', e);
+                    alert('保存失败！浏览器可能禁用了本地存储或空间已满。');
+                }
+            }
+
+            function resetPlan() {
+                if (confirm('确定要重置所有计划为默认设置吗？此操作不可撤销。')) {
+                    try {
+                        localStorage.removeItem('workoutPlan_v2');
+                    } catch (e) {
+                        console.error('无法清除 localStorage:', e);
+                    }
+                    renderPlan(JSON.parse(JSON.stringify(defaultPlanData)));
+                }
+            }
+
+            // --- 4. 动态背景 ---
+            const canvas = document.getElementById('background-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            let animationFrameId;
+
+            function setupCanvas() {
+                const dpr = window.devicePixelRatio || 1;
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                ctx.scale(dpr, dpr);
+                
+                particles = [];
+                let numParticles = Math.floor(canvas.width * canvas.height / 25000 / (dpr*dpr));
+                if (numParticles < 20) numParticles = 20;
+                if (numParticles > 80) numParticles = 80;
+
+                for (let i = 0; i < numParticles; i++) {
+                    particles.push({
+                        x: Math.random() * rect.width,
+                        y: Math.random() * rect.height,
+                        vx: (Math.random() - 0.5) * 0.2,
+                        vy: (Math.random() - 0.5) * 0.2,
+                        radius: Math.random() * 1.2 + 0.5
+                    });
+                }
+            }
+
+            function draw() {
+                const rect = canvas.getBoundingClientRect();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                particles.forEach(p => {
+                    p.x += p.vx; p.y += p.vy;
+                    if (p.x < 0 || p.x > rect.width) p.vx *= -1;
+                    if (p.y < 0 || p.y > rect.height) p.vy *= -1;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
+                });
+            }
+
+            // --- 5. 动画循环与性能降级 ---
+            let useSetInterval = false;
+            let rafFired = false;
+            function animate() {
+                draw();
+                if (!useSetInterval) animationFrameId = requestAnimationFrame(animate);
+            }
+            const rafProbe = setTimeout(() => {
+                if (!rafFired) {
+                    useSetInterval = true;
+                    document.getElementById('perf-warning').style.display = 'block';
+                    console.warn('requestAnimationFrame 降级为 setInterval.');
+                    setInterval(animate, 1000 / 30);
+                }
+            }, 1200);
+            requestAnimationFrame(() => {
+                rafFired = true;
+                clearTimeout(rafProbe);
+                animate();
+            });
+
+            // --- 6. 事件监听与初始化 ---
+            function initialize() {
+                // 检查比赛要求的ID是否存在
+                const requiredIds = ['game', 'btnStart', 'btnPause', 'autoPilot', 'showVision', 'difficulty', 'speed', 'overlay', 'overlayTitle', 'overlayText', 'scoreBox'];
+                if (!requiredIds.every(id => document.getElementById(id))) {
+                    throw new Error("一个或多个比赛要求的元素缺失，我不能在基础检查上失败。");
+                }
+
+                loadPlan();
+                setupCanvas();
+
+                document.getElementById('saveButton').addEventListener('click', savePlan);
+                document.getElementById('resetButton').addEventListener('click', resetPlan);
+
+                planContainer.addEventListener('change', function(e) {
+                    if (e.target.classList.contains('task-checkbox')) {
+                        const taskItem = e.target.closest('.task-item');
+                        taskItem.classList.toggle('done', e.target.checked);
+                        updateProgress(e.target.closest('.plan-card'));
+                    }
+                });
+
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                        setupCanvas();
+                        animate();
+                    }, 250);
+                });
+            }
+
+            // 确保DOM加载完毕再执行
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initialize);
             } else {
-                 // If forced or recorder wasn't active, just reset state
-                 console.log("Forcing voice input state reset.");
-                 resetVoiceInputState();
-                 if (voiceStream) {
-                     voiceStream.getTracks().forEach(track => track.stop());
-                     voiceStream = null;
-                 }
+                initialize();
             }
-         }
 
-        // Reset Voice Button and related states
-        function resetVoiceInputState() {
-             isRecordingVoice = false;
-             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                  try { mediaRecorder.stop(); } catch(e) { console.warn("Error stopping recorder during reset:", e)}
-             }
-             mediaRecorder = null;
-             audioChunks = [];
-             if (voiceStream) {
-                  voiceStream.getTracks().forEach(track => track.stop());
-                  voiceStream = null;
-             }
-
-             voiceInputButton.classList.remove('recording', 'processing');
-             voiceInputButton.disabled = isSending || !micPermissionGranted || !currentSettings.sttApiKey; // Reset disabled state correctly
-             voiceInputMicIcon.style.display = 'inline-block';
-             voiceInputStopIcon.style.display = 'none';
-             voiceInputSpinner.style.display = 'none';
-
-             // Re-enable other inputs only if chat isn't sending
-             if (!isSending) {
-                 userInput.disabled = false;
-                 sendButton.disabled = false;
-                 uploadButton.disabled = false;
-                 clearButton.disabled = false;
-             }
-            // Optionally clear status, or let the final success/error message linger
-            // updateVoiceStatus("", "idle");
-         }
-
-
-         // Send Audio to STT API
-         async function sendAudioToSttApi(audioBlob) {
-             console.log(`Sending audio (${(audioBlob.size / 1024).toFixed(1)} KB) to STT API... Attempt ${sttRetryCount + 1}`);
-             updateVoiceStatus(`发送语音识别... (尝试 ${sttRetryCount + 1}/${STT_MAX_RETRIES + 1})`, "processing");
-
-             try {
-                 const base64AudioWithPrefix = await blobToBase64(audioBlob);
-
-                 // Construct payload for multimodal endpoint (like Gemini)
-                 const payload = {
-                     model: currentSettings.sttModel, // Use STT model setting
-                     messages: [{
-                         role: "user",
-                         content: [
-                             { type: "text", text: TRANSCRIPTION_PROMPT },
-                             {
-                                 type: "image_url", // Using image_url for audio base64 data URL
-                                 image_url: { url: base64AudioWithPrefix }
-                             }
-                         ]
-                     }],
-                     // max_tokens might be needed depending on the model
-                     max_tokens: 1000 // Limit transcription tokens
-                 };
-
-                 const response = await fetch(currentSettings.sttApiUrl, { // Use STT URL setting
-                     method: 'POST',
-                     headers: {
-                         'Content-Type': 'application/json',
-                         'Authorization': `Bearer ${currentSettings.sttApiKey}` // Use STT Key setting
-                     },
-                     body: JSON.stringify(payload)
-                 });
-
-                 if (!response.ok) {
-                     let errorBody = `HTTP 状态 ${response.status}`;
-                     try { errorBody = await response.text(); } catch (e) {}
-                     throw new Error(`语音识别 API 错误: ${errorBody.substring(0, 150)}`);
-                 }
-
-                 const data = await response.json();
-                 console.log("STT API Response:", data);
-
-                 let transcript = "";
-                 // Check typical OpenAI/Gemini structures
-                 if (data.choices && data.choices[0]?.message?.content) {
-                     transcript = data.choices[0].message.content.trim();
-                 } else if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-                     transcript = data.candidates[0].content.parts[0].text.trim();
-                 } else {
-                     console.warn("无法解析 STT 响应:", data);
-                     throw new Error("无法解析语音识别服务的响应");
-                 }
-
-                 if (!transcript) {
-                     console.warn("STT returned empty transcript.");
-                     updateVoiceStatus("未能识别语音", "warning", 4000);
-                     resetVoiceInputState();
-                     return;
-                 }
-
-                 console.log("Raw Transcript:", transcript);
-
-                 // Decide whether to correct
-                 if (currentSettings.enableVoiceCorrection) {
-                     callAiForVoiceCorrection(transcript);
-                 } else {
-                     // Put raw transcript directly into input
-                     userInput.value = transcript;
-                     userInput.dispatchEvent(new Event('input')); // Trigger height adjustment
-                     updateVoiceStatus("语音识别完成", "success", 2000);
-                     resetVoiceInputState(); // Finish
-                 }
-
-             } catch (error) {
-                 console.error("语音识别 API 出错:", error);
-                 if (sttRetryCount < STT_MAX_RETRIES) {
-                     sttRetryCount++;
-                     updateVoiceStatus(`语音识别失败，重试中... (${sttRetryCount + 1})`, "error");
-                     setTimeout(() => sendAudioToSttApi(audioBlob), 2000 * sttRetryCount);
-                 } else {
-                     updateVoiceStatus(`语音识别多次失败: ${error.message}`, "error", 5000);
-                     resetVoiceInputState();
-                 }
-             }
-         }
-
-
-         // Call AI for Voice Correction
-         async function callAiForVoiceCorrection(originalText) {
-             console.log(`Sending text for correction... Attempt ${correctionRetryCount + 1}`);
-             updateVoiceStatus(`AI 修正中... (尝试 ${correctionRetryCount + 1}/${STT_MAX_RETRIES + 1})`, "processing");
-
-             try {
-                 // Use the SAME STT API settings for correction (common practice for providers like Zetatechs)
-                 const payload = {
-                     model: currentSettings.sttModel, // Reuse STT model
-                     messages: [{
-                         role: "user",
-                         content: `${CORRECTION_PROMPT}\n---\n${originalText}\n---` // Combined prompt and text
-                     }],
-                     max_tokens: 1500 // Allow more tokens for corrected output
-                 };
-
-                 const response = await fetch(currentSettings.sttApiUrl, { // Reuse STT URL
-                     method: 'POST',
-                     headers: {
-                         'Content-Type': 'application/json',
-                         'Authorization': `Bearer ${currentSettings.sttApiKey}` // Reuse STT Key
-                     },
-                     body: JSON.stringify(payload)
-                 });
-
-                 if (!response.ok) {
-                     let errorBody = `HTTP 状态 ${response.status}`;
-                     try { errorBody = await response.text(); } catch (e) {}
-                     throw new Error(`AI 修正 API 错误: ${errorBody.substring(0, 150)}`);
-                 }
-
-                 const data = await response.json();
-                 console.log("Correction API Response:", data);
-
-                 let correctedText = "";
-                 // Check typical structures
-                 if (data.choices && data.choices[0]?.message?.content) {
-                     correctedText = data.choices[0].message.content.trim();
-                 } else if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-                     correctedText = data.candidates[0].content.parts[0].text.trim();
-                 } else {
-                     console.warn("无法解析修正响应:", data);
-                     // Fallback to original text if correction fails to parse
-                     correctedText = originalText;
-                     updateVoiceStatus("修正响应解析失败，使用原始文本", "warning", 4000);
-                 }
-
-                  if (!correctedText) { // Handle case where correction API returns empty
-                      console.warn("Correction returned empty text, using original.");
-                      correctedText = originalText;
-                      updateVoiceStatus("AI 修正返回为空，使用原始文本", "warning", 4000);
-                  }
-
-                 console.log("Corrected Text:", correctedText);
-                 userInput.value = correctedText;
-                 userInput.dispatchEvent(new Event('input')); // Trigger height adjustment
-                 updateVoiceStatus("语音输入完成", "success", 2000);
-                 resetVoiceInputState(); // Finish
-
-             } catch (error) {
-                 console.error("AI 修正 API 出错:", error);
-                 if (correctionRetryCount < STT_MAX_RETRIES) {
-                     correctionRetryCount++;
-                     updateVoiceStatus(`AI 修正失败，重试中... (${correctionRetryCount + 1})`, "error");
-                     setTimeout(() => callAiForVoiceCorrection(originalText), 2000 * correctionRetryCount);
-                 } else {
-                     updateVoiceStatus(`AI 修正多次失败: ${error.message}`, "error", 5000);
-                     // Put original text in input as fallback after final failure
-                     userInput.value = originalText;
-                     userInput.dispatchEvent(new Event('input'));
-                     resetVoiceInputState();
-                 }
-             }
-         }
-
-
-        // --- Event Listeners ---
-        sendButton.addEventListener('click', sendMessage);
-        userInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter' && !event.shiftKey && !isSending && !isRecordingVoice) {
-                event.preventDefault();
-                sendMessage();
-            }
-        });
-        userInput.addEventListener('input', () => { // Auto-resize textarea
-            userInput.style.height = 'auto';
-            userInput.style.height = userInput.scrollHeight + 'px';
-        });
-        clearButton.addEventListener('click', clearChat);
-        uploadButton.addEventListener('click', () => {
-             if (!currentSettings.useVision && !isSending && !isRecordingVoice) {
-                 if (!confirm("图像理解功能未启用，图片不会发送给 AI。确定要上传吗？")) {
-                     return;
-                 }
-             }
-            imageInput.click();
-        });
-        imageInput.addEventListener('change', handleImageUpload);
-        settingsToggleButton.addEventListener('click', () => {
-            settingsPanel.classList.toggle('active');
-        });
-        applySettingsButton.addEventListener('click', applySettings);
-
-        // Voice Input Button Listener
-        voiceInputButton.addEventListener('click', handleVoiceInputClick);
-
-
-        // Font Size Buttons
-        function setActiveFontButton(selectedSize) {
-             [fontSmallButton, fontMediumButton, fontLargeButton].forEach(btn => {
-                 btn.classList.toggle('active', btn.dataset.size === selectedSize);
-             });
-        }
-        fontSmallButton.addEventListener('click', () => { bodyElement.className = 'font-small'; setActiveFontButton('small'); });
-        fontMediumButton.addEventListener('click', () => { bodyElement.className = 'font-medium'; setActiveFontButton('medium'); });
-        fontLargeButton.addEventListener('click', () => { bodyElement.className = 'font-large'; setActiveFontButton('large'); });
-
-         // Settings Checkbox Interactivity
-         enableMaxTokensCheckbox.addEventListener('change', () => { maxTokensInput.disabled = !enableMaxTokensCheckbox.checked; });
-         enableTemperatureCheckbox.addEventListener('change', () => { temperatureInput.disabled = !enableTemperatureCheckbox.checked; });
-
-        // --- Initialization ---
-        applySettings(); // Apply default/saved settings on load
-        // Passive permission check on load - don't nag, just update state
-        requestMicrophonePermission(false).then(granted => {
-             micPermissionGranted = granted;
-             voiceInputButton.disabled = isSending || !granted || !currentSettings.sttApiKey; // Initial state
-             voiceInputButton.title = granted && currentSettings.sttApiKey ? "语音输入" : "语音输入不可用 (检查权限/设置)";
-             console.log("Initial Mic Permission Granted:", granted);
-        });
-        // Add initial welcome message to history *without* displaying it again
-        // conversationHistory.push({ role: 'assistant', content: '您好！我是您的AI健康助手。请问您今天感觉哪里不舒服？可以详细描述一下您的症状，如果方便的话，也可以提供相关的图片。' });
-
+        })();
     </script>
 </body>
 </html>
